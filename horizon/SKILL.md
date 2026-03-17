@@ -403,4 +403,4 @@ import { Memo } from "@stellar/stellar-sdk";
 
 ---
 
-*stellarskills.com/horizon — MIT License*
+*stellarskills.vercel.app/horizon — MIT License*
