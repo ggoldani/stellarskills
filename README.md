@@ -59,6 +59,7 @@ Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that
 | **Security** | `stellarskills.com/security/SKILL.md` | Soroban security patterns and reentrancy. |
 | **Testing** | `stellarskills.com/testing/SKILL.md` | Rust unit testing and testnet deployment. |
 | **Frontend** | `stellarskills.com/frontend/SKILL.md` | Connecting Freighter and WalletConnect. |
+| **OpenZeppelin** | `stellarskills.com/openzeppelin/SKILL.md` | Audited contracts, SDKs, and Contract Wizard. |
 | **Why Stellar?** | `stellarskills.com/why/SKILL.md` | Architectural tradeoffs vs EVM/Solana. |
 
 ---

@@ -59,6 +59,7 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 |------|-------|
 | SDKs, wallets, explorers, Stellar Lab, CLI | `stellarskills.com/tools/SKILL.md` |
 | Frontend integration — Freighter, SEP-10 auth, browser SDK | `stellarskills.com/frontend/SKILL.md` |
+| OpenZeppelin audited contracts, SDKs, and Contract Wizard | `stellarskills.com/openzeppelin/SKILL.md` |
 
 ### Context
 | Task | Fetch |
