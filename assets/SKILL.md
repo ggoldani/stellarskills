@@ -282,4 +282,4 @@ Operation.pathPaymentStrictSend({
 
 ---
 
-*stellarskills.com/assets — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/assets — MIT License*

@@ -367,4 +367,4 @@ let new_balance = balance.checked_add(amount).expect("overflow");
 
 ---
 
-*stellarskills.com/soroban — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/soroban — MIT License*
