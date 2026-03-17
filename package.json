@@ -1,0 +1,32 @@
+{
+  "name": "stellarskills",
+  "version": "1.0.0",
+  "description": "Stellar Network knowledge engineered specifically for AI agents",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "stellarskills": "./bin/cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ggoldani/stellarskills.git"
+  },
+  "keywords": [
+    "stellar",
+    "soroban",
+    "ai",
+    "agent",
+    "llm",
+    "blockchain",
+    "crypto"
+  ],
+  "author": "Gabriel Goldani",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ggoldani/stellarskills/issues"
+  },
+  "homepage": "https://github.com/ggoldani/stellarskills#readme"
+}

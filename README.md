@@ -36,6 +36,23 @@ curl -s https://raw.githubusercontent.com/ggoldani/stellarskills/main/accounts/S
 curl -s https://raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md
 ```
 
+**Use the CLI:**
+The `stellarskills` CLI lets you quickly find, read, or grab the URL for any skill directly from your terminal.
+
+```bash
+# List all available skills
+npx stellarskills list
+
+# Print the raw markdown content of a skill
+npx stellarskills get soroban
+
+# Pipe it straight into a prompt file
+npx stellarskills get soroban > prompt.txt
+
+# Get just the raw GitHub URL
+npx stellarskills url accounts
+```
+
 Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that can resolve HTTP URLs.
 
 ---
