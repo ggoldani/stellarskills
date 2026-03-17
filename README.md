@@ -63,29 +63,6 @@ Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that
 
 ---
 
-## 🏗 Architecture & Deployment
-
-This repository is designed to be deployed on Vercel as a brutally simple static site. Each `SKILL.md` file is served directly to the requester.
-
-The `vercel.json` ensures that every request receives `text/plain` with open CORS, allowing seamless ingestion by browser-based AI interfaces.
-
-### vercel.json
-```json
-{
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
-      ]
-    }
-  ]
-}
-```
-
----
-
 ## 🤝 Contributing
 
 We want this to be the single source of truth for AI agents building on Stellar. Is an agent consistently failing at a specific task? Did a Soroban RPC endpoint change? Open a PR!
