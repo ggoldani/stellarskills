@@ -21,15 +21,18 @@ Usage:
   stellarskills <command> [arguments]
 
 Commands:
-  list         List all available skills.
-  get <skill>  Print the raw Markdown content of a specific skill.
-  url <skill>  Print the direct raw GitHub URL of a specific skill.
+  list                           List all available skills.
+  get <skill>                    Print the raw Markdown content of a specific skill.
+  url <skill>                    Print the direct raw GitHub URL of a specific skill.
+  combine <skill1> [skill2] ...  Combine multiple skills into a single Markdown output.
+  search "<query>"               Search across all skills for a specific term.
 
 Examples:
   npx stellarskills list
   npx stellarskills get soroban
   npx stellarskills url accounts
-  npx stellarskills get root
+  npx stellarskills combine accounts soroban security > prompt.txt
+  npx stellarskills search "trustline"
 `);
 }
 
@@ -109,6 +112,69 @@ function handleUrl(skill) {
   }
 }
 
+function handleCombine(requestedSkills) {
+  if (!requestedSkills || requestedSkills.length === 0) {
+    console.error('Error: You must provide at least one skill name to combine.\nExample: stellarskills combine accounts soroban security');
+    process.exit(1);
+  }
+
+  const availableSkills = getAvailableSkills();
+  const missingSkills = requestedSkills.filter(skill => !availableSkills.includes(skill));
+
+  if (missingSkills.length > 0) {
+    console.error(`Error: The following requested skills were not found: ${missingSkills.join(', ')}`);
+    console.log('Run `stellarskills list` to see available skills.');
+    process.exit(1);
+  }
+
+  const contents = requestedSkills.map(skill => {
+    const skillPath = getSkillPath(skill);
+    try {
+      return fs.readFileSync(skillPath, 'utf-8');
+    } catch (e) {
+      console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+  const separator = '\n\n--------------------------------------------------------------------------------\n\n';
+  const combinedOutput = contents.join(separator);
+
+  console.log(combinedOutput);
+}
+
+function handleSearch(query) {
+  if (!query) {
+    console.error('Error: You must provide a search query.\nExample: stellarskills search "trustline"');
+    process.exit(1);
+  }
+
+  const availableSkills = getAvailableSkills();
+  const lowerQuery = query.toLowerCase();
+  let foundAny = false;
+
+  console.log(`\n🔍 Searching for "${query}"...\n`);
+
+  for (const skill of availableSkills) {
+    const skillPath = getSkillPath(skill);
+    try {
+      const content = fs.readFileSync(skillPath, 'utf-8');
+      if (content.toLowerCase().includes(lowerQuery)) {
+        console.log(`  ✅ Found in: ${skill}`);
+        foundAny = true;
+      }
+    } catch (e) {
+      // Gracefully skip files that cannot be read
+    }
+  }
+
+  if (!foundAny) {
+    console.log(`  ❌ No results found across available skills.`);
+  }
+
+  console.log(); // Trailing newline for clean output
+}
+
 const command = args[0];
 
 switch (command) {
@@ -120,6 +186,12 @@ switch (command) {
     break;
   case 'url':
     handleUrl(args[1]);
+    break;
+  case 'combine':
+    handleCombine(args.slice(1));
+    break;
+  case 'search':
+    handleSearch(args[1]);
     break;
   case 'help':
   case '--help':

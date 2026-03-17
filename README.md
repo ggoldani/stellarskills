@@ -51,6 +51,12 @@ npx stellarskills get soroban > prompt.txt
 
 # Get just the raw GitHub URL
 npx stellarskills url accounts
+
+# Combine multiple skills into a single prompt context
+npx stellarskills combine accounts soroban security > prompt.txt
+
+# Find which domain contains a specific concept
+npx stellarskills search "trustline"
 ```
 
 Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that can resolve HTTP URLs.
