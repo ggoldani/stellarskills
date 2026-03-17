@@ -2,7 +2,7 @@
 
 > High-signal, noise-free Stellar Network knowledge engineered specifically for AI agents. Fetch any skill URL and instantly equip your agent to build production-ready applications on Stellar.
 
-**stellarskills.com** • MIT License
+**stellarskills.vercel.app** • MIT License
 
 ---
 
@@ -26,14 +26,14 @@ Give any AI agent a skill URL in your prompt. The agent will fetch the raw Markd
 
 **Prompt example:**
 ```text
-Read https://stellarskills.com/SKILL.md to understand the ecosystem, then read https://stellarskills.com/soroban/SKILL.md and write a smart contract that acts as a decentralized autonomous organization.
+Read https://stellarskills.vercel.app/SKILL.md to understand the ecosystem, then read https://stellarskills.vercel.app/soroban/SKILL.md and write a smart contract that acts as a decentralized autonomous organization.
 ```
 
 **cURL it yourself:**
 ```bash
-curl -s https://stellarskills.com/SKILL.md
-curl -s https://stellarskills.com/accounts/SKILL.md
-curl -s https://stellarskills.com/soroban/SKILL.md
+curl -s https://stellarskills.vercel.app/SKILL.md
+curl -s https://stellarskills.vercel.app/accounts/SKILL.md
+curl -s https://stellarskills.vercel.app/soroban/SKILL.md
 ```
 
 Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that can resolve HTTP URLs.
@@ -44,23 +44,23 @@ Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that
 
 | Skill Domain | URL | Description |
 |--------------|-----|-------------|
-| **Root Index** | `stellarskills.com/SKILL.md` | Start here. The mental models and full index. |
-| **Accounts** | `stellarskills.com/accounts/SKILL.md` | Keypairs, minimum balances, multisig, sponsorship. |
-| **Assets** | `stellarskills.com/assets/SKILL.md` | Custom tokens, trustlines, SAC, USDC. |
-| **Soroban** | `stellarskills.com/soroban/SKILL.md` | Smart contracts (Rust/WASM), storage, auth. |
-| **SEPs** | `stellarskills.com/seps/SKILL.md` | Interoperability standards (SEP-10, 24, 31, etc.). |
-| **Horizon API** | `stellarskills.com/horizon/SKILL.md` | REST API for the classic protocol. |
-| **Soroban RPC** | `stellarskills.com/rpc/SKILL.md` | JSON-RPC for smart contract simulation/invocation. |
-| **Fees** | `stellarskills.com/fees/SKILL.md` | Base fees, resource limits, and fee bumps. |
-| **DEX & AMM** | `stellarskills.com/dex/SKILL.md` | Built-in order books and liquidity pools. |
-| **Operations** | `stellarskills.com/operations/SKILL.md` | Reference for all transaction operations. |
-| **Anchors** | `stellarskills.com/anchors/SKILL.md` | Fiat on/off-ramps and integration flows. |
-| **Tools** | `stellarskills.com/tools/SKILL.md` | SDKs, CLI, wallets, and explorers. |
-| **Security** | `stellarskills.com/security/SKILL.md` | Soroban security patterns and reentrancy. |
-| **Testing** | `stellarskills.com/testing/SKILL.md` | Rust unit testing and testnet deployment. |
-| **Frontend** | `stellarskills.com/frontend/SKILL.md` | Connecting Freighter and WalletConnect. |
-| **OpenZeppelin** | `stellarskills.com/openzeppelin/SKILL.md` | Audited contracts, SDKs, and Contract Wizard. |
-| **Why Stellar?** | `stellarskills.com/why/SKILL.md` | Architectural tradeoffs vs EVM/Solana. |
+| **Root Index** | `stellarskills.vercel.app/SKILL.md` | Start here. The mental models and full index. |
+| **Accounts** | `stellarskills.vercel.app/accounts/SKILL.md` | Keypairs, minimum balances, multisig, sponsorship. |
+| **Assets** | `stellarskills.vercel.app/assets/SKILL.md` | Custom tokens, trustlines, SAC, USDC. |
+| **Soroban** | `stellarskills.vercel.app/soroban/SKILL.md` | Smart contracts (Rust/WASM), storage, auth. |
+| **SEPs** | `stellarskills.vercel.app/seps/SKILL.md` | Interoperability standards (SEP-10, 24, 31, etc.). |
+| **Horizon API** | `stellarskills.vercel.app/horizon/SKILL.md` | REST API for the classic protocol. |
+| **Soroban RPC** | `stellarskills.vercel.app/rpc/SKILL.md` | JSON-RPC for smart contract simulation/invocation. |
+| **Fees** | `stellarskills.vercel.app/fees/SKILL.md` | Base fees, resource limits, and fee bumps. |
+| **DEX & AMM** | `stellarskills.vercel.app/dex/SKILL.md` | Built-in order books and liquidity pools. |
+| **Operations** | `stellarskills.vercel.app/operations/SKILL.md` | Reference for all transaction operations. |
+| **Anchors** | `stellarskills.vercel.app/anchors/SKILL.md` | Fiat on/off-ramps and integration flows. |
+| **Tools** | `stellarskills.vercel.app/tools/SKILL.md` | SDKs, CLI, wallets, and explorers. |
+| **Security** | `stellarskills.vercel.app/security/SKILL.md` | Soroban security patterns and reentrancy. |
+| **Testing** | `stellarskills.vercel.app/testing/SKILL.md` | Rust unit testing and testnet deployment. |
+| **Frontend** | `stellarskills.vercel.app/frontend/SKILL.md` | Connecting Freighter and WalletConnect. |
+| **OpenZeppelin** | `stellarskills.vercel.app/openzeppelin/SKILL.md` | Audited contracts, SDKs, and Contract Wizard. |
+| **Why Stellar?** | `stellarskills.vercel.app/why/SKILL.md` | Architectural tradeoffs vs EVM/Solana. |
 
 ---
 
@@ -79,4 +79,4 @@ We want this to be the single source of truth for AI agents building on Stellar.
 
 ## 📄 License
 
-MIT © [stellarskills.com](https://stellarskills.com)
+MIT © [stellarskills.vercel.app](https://stellarskills.vercel.app)

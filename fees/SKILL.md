@@ -141,4 +141,4 @@ await server.submitTransaction(feeBump);
 
 ---
 
-*stellarskills.com/fees — MIT License*
+*stellarskills.vercel.app/fees — MIT License*

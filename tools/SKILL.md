@@ -104,4 +104,4 @@ When you don't know how to implement something, look here:
 
 ---
 
-*stellarskills.com/tools — MIT License*
+*stellarskills.vercel.app/tools — MIT License*

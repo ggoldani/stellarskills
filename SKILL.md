@@ -29,42 +29,42 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 ### Core Protocol
 | Task | Fetch |
 |------|-------|
-| Understanding accounts, keypairs, signers, sponsorship | `stellarskills.com/accounts/SKILL.md` |
-| Issuing assets, trustlines, custom tokens, SAC | `stellarskills.com/assets/SKILL.md` |
-| All transaction operations (Payment, ManageBuyOffer, etc.) | `stellarskills.com/operations/SKILL.md` |
-| Fees, base fee, resource fees, fee bump | `stellarskills.com/fees/SKILL.md` |
-| Built-in DEX, AMM, path payments, liquidity pools | `stellarskills.com/dex/SKILL.md` |
+| Understanding accounts, keypairs, signers, sponsorship | `stellarskills.vercel.app/accounts/SKILL.md` |
+| Issuing assets, trustlines, custom tokens, SAC | `stellarskills.vercel.app/assets/SKILL.md` |
+| All transaction operations (Payment, ManageBuyOffer, etc.) | `stellarskills.vercel.app/operations/SKILL.md` |
+| Fees, base fee, resource fees, fee bump | `stellarskills.vercel.app/fees/SKILL.md` |
+| Built-in DEX, AMM, path payments, liquidity pools | `stellarskills.vercel.app/dex/SKILL.md` |
 
 ### Data & APIs
 | Task | Fetch |
 |------|-------|
-| Horizon REST API — accounts, transactions, effects, streaming | `stellarskills.com/horizon/SKILL.md` |
-| Soroban RPC — simulate, send, getLedger, getTransaction | `stellarskills.com/rpc/SKILL.md` |
+| Horizon REST API — accounts, transactions, effects, streaming | `stellarskills.vercel.app/horizon/SKILL.md` |
+| Soroban RPC — simulate, send, getLedger, getTransaction | `stellarskills.vercel.app/rpc/SKILL.md` |
 
 ### Smart Contracts
 | Task | Fetch |
 |------|-------|
-| Soroban smart contracts (Rust/WASM) | `stellarskills.com/soroban/SKILL.md` |
-| Soroban security patterns, auth, reentrancy | `stellarskills.com/security/SKILL.md` |
-| Testing Soroban contracts, Stellar CLI, testnet | `stellarskills.com/testing/SKILL.md` |
+| Soroban smart contracts (Rust/WASM) | `stellarskills.vercel.app/soroban/SKILL.md` |
+| Soroban security patterns, auth, reentrancy | `stellarskills.vercel.app/security/SKILL.md` |
+| Testing Soroban contracts, Stellar CLI, testnet | `stellarskills.vercel.app/testing/SKILL.md` |
 
 ### Payments & Anchors
 | Task | Fetch |
 |------|-------|
-| SEP standards — SEP-6, SEP-10, SEP-24, SEP-31, SEP-38 | `stellarskills.com/seps/SKILL.md` |
-| Anchor ecosystem, stellar.toml, on/off-ramp integration | `stellarskills.com/anchors/SKILL.md` |
+| SEP standards — SEP-6, SEP-10, SEP-24, SEP-31, SEP-38 | `stellarskills.vercel.app/seps/SKILL.md` |
+| Anchor ecosystem, stellar.toml, on/off-ramp integration | `stellarskills.vercel.app/anchors/SKILL.md` |
 
 ### Tooling & Frontend
 | Task | Fetch |
 |------|-------|
-| SDKs, wallets, explorers, Stellar Lab, CLI | `stellarskills.com/tools/SKILL.md` |
-| Frontend integration — Freighter, SEP-10 auth, browser SDK | `stellarskills.com/frontend/SKILL.md` |
-| OpenZeppelin audited contracts, SDKs, and Contract Wizard | `stellarskills.com/openzeppelin/SKILL.md` |
+| SDKs, wallets, explorers, Stellar Lab, CLI | `stellarskills.vercel.app/tools/SKILL.md` |
+| Frontend integration — Freighter, SEP-10 auth, browser SDK | `stellarskills.vercel.app/frontend/SKILL.md` |
+| OpenZeppelin audited contracts, SDKs, and Contract Wizard | `stellarskills.vercel.app/openzeppelin/SKILL.md` |
 
 ### Context
 | Task | Fetch |
 |------|-------|
-| Why Stellar — use cases, honest tradeoffs, ecosystem | `stellarskills.com/why/SKILL.md` |
+| Why Stellar — use cases, honest tradeoffs, ecosystem | `stellarskills.vercel.app/why/SKILL.md` |
 
 ---
 
@@ -132,4 +132,4 @@ Every transaction must be signed with the correct network passphrase:
 
 ---
 
-*stellarskills.com — MIT License*
+*stellarskills.vercel.app — MIT License*

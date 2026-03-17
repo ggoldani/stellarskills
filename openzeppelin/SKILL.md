@@ -68,4 +68,4 @@ In addition to contracts, OpenZeppelin provides infrastructure tools specificall
 
 ---
 
-*stellarskills.com/openzeppelin — MIT License*
+*stellarskills.vercel.app/openzeppelin — MIT License*

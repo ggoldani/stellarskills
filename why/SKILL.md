@@ -65,4 +65,4 @@ Do not use Stellar if:
 
 ---
 
-*stellarskills.com/why — MIT License*
+*stellarskills.vercel.app/why — MIT License*
