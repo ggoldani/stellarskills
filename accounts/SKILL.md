@@ -267,4 +267,4 @@ go get github.com/stellar/go/clients/horizonclient  # Go
 
 ---
 
-*stellarskills.vercel.app/accounts — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/accounts — MIT License*

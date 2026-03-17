@@ -162,4 +162,4 @@ Pass `bestPath.path` into the `path` array of your Operation.
 
 ---
 
-*stellarskills.vercel.app/dex — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/dex — MIT License*

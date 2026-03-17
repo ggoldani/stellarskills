@@ -104,4 +104,4 @@ When you don't know how to implement something, look here:
 
 ---
 
-*stellarskills.vercel.app/tools — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/tools — MIT License*

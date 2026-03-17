@@ -376,4 +376,4 @@ When building an anchor or integrating with one:
 
 ---
 
-*stellarskills.vercel.app/seps — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/seps — MIT License*

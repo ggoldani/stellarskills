@@ -282,4 +282,4 @@ Operation.pathPaymentStrictSend({
 
 ---
 
-*stellarskills.vercel.app/assets — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/assets — MIT License*

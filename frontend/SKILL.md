@@ -166,4 +166,4 @@ localStorage.setItem("auth_token", jwt);
 
 ---
 
-*stellarskills.vercel.app/frontend — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/frontend — MIT License*

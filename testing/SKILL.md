@@ -210,4 +210,4 @@ For E2E tests, you can write JavaScript/TypeScript scripts using `@stellar/stell
 
 ---
 
-*stellarskills.vercel.app/testing — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/testing — MIT License*

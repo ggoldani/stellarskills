@@ -176,4 +176,4 @@ pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) {
 
 ---
 
-*stellarskills.vercel.app/security — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/security — MIT License*

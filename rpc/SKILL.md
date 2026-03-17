@@ -209,4 +209,4 @@ response.events.forEach(event => {
 
 ---
 
-*stellarskills.vercel.app/rpc — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/rpc — MIT License*

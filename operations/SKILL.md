@@ -252,4 +252,4 @@ Operation.restoreFootprint({})
 
 ---
 
-*stellarskills.vercel.app/operations — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/operations — MIT License*

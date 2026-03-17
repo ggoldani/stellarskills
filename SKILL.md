@@ -29,42 +29,42 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 ### Core Protocol
 | Task | Fetch |
 |------|-------|
-| Understanding accounts, keypairs, signers, sponsorship | `stellarskills.vercel.app/accounts/SKILL.md` |
-| Issuing assets, trustlines, custom tokens, SAC | `stellarskills.vercel.app/assets/SKILL.md` |
-| All transaction operations (Payment, ManageBuyOffer, etc.) | `stellarskills.vercel.app/operations/SKILL.md` |
-| Fees, base fee, resource fees, fee bump | `stellarskills.vercel.app/fees/SKILL.md` |
-| Built-in DEX, AMM, path payments, liquidity pools | `stellarskills.vercel.app/dex/SKILL.md` |
+| Understanding accounts, keypairs, signers, sponsorship | `raw.githubusercontent.com/ggoldani/stellarskills/main/accounts/SKILL.md` |
+| Issuing assets, trustlines, custom tokens, SAC | `raw.githubusercontent.com/ggoldani/stellarskills/main/assets/SKILL.md` |
+| All transaction operations (Payment, ManageBuyOffer, etc.) | `raw.githubusercontent.com/ggoldani/stellarskills/main/operations/SKILL.md` |
+| Fees, base fee, resource fees, fee bump | `raw.githubusercontent.com/ggoldani/stellarskills/main/fees/SKILL.md` |
+| Built-in DEX, AMM, path payments, liquidity pools | `raw.githubusercontent.com/ggoldani/stellarskills/main/dex/SKILL.md` |
 
 ### Data & APIs
 | Task | Fetch |
 |------|-------|
-| Horizon REST API — accounts, transactions, effects, streaming | `stellarskills.vercel.app/horizon/SKILL.md` |
-| Soroban RPC — simulate, send, getLedger, getTransaction | `stellarskills.vercel.app/rpc/SKILL.md` |
+| Horizon REST API — accounts, transactions, effects, streaming | `raw.githubusercontent.com/ggoldani/stellarskills/main/horizon/SKILL.md` |
+| Soroban RPC — simulate, send, getLedger, getTransaction | `raw.githubusercontent.com/ggoldani/stellarskills/main/rpc/SKILL.md` |
 
 ### Smart Contracts
 | Task | Fetch |
 |------|-------|
-| Soroban smart contracts (Rust/WASM) | `stellarskills.vercel.app/soroban/SKILL.md` |
-| Soroban security patterns, auth, reentrancy | `stellarskills.vercel.app/security/SKILL.md` |
-| Testing Soroban contracts, Stellar CLI, testnet | `stellarskills.vercel.app/testing/SKILL.md` |
+| Soroban smart contracts (Rust/WASM) | `raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md` |
+| Soroban security patterns, auth, reentrancy | `raw.githubusercontent.com/ggoldani/stellarskills/main/security/SKILL.md` |
+| Testing Soroban contracts, Stellar CLI, testnet | `raw.githubusercontent.com/ggoldani/stellarskills/main/testing/SKILL.md` |
 
 ### Payments & Anchors
 | Task | Fetch |
 |------|-------|
-| SEP standards — SEP-6, SEP-10, SEP-24, SEP-31, SEP-38 | `stellarskills.vercel.app/seps/SKILL.md` |
-| Anchor ecosystem, stellar.toml, on/off-ramp integration | `stellarskills.vercel.app/anchors/SKILL.md` |
+| SEP standards — SEP-6, SEP-10, SEP-24, SEP-31, SEP-38 | `raw.githubusercontent.com/ggoldani/stellarskills/main/seps/SKILL.md` |
+| Anchor ecosystem, stellar.toml, on/off-ramp integration | `raw.githubusercontent.com/ggoldani/stellarskills/main/anchors/SKILL.md` |
 
 ### Tooling & Frontend
 | Task | Fetch |
 |------|-------|
-| SDKs, wallets, explorers, Stellar Lab, CLI | `stellarskills.vercel.app/tools/SKILL.md` |
-| Frontend integration — Freighter, SEP-10 auth, browser SDK | `stellarskills.vercel.app/frontend/SKILL.md` |
-| OpenZeppelin audited contracts, SDKs, and Contract Wizard | `stellarskills.vercel.app/openzeppelin/SKILL.md` |
+| SDKs, wallets, explorers, Stellar Lab, CLI | `raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md` |
+| Frontend integration — Freighter, SEP-10 auth, browser SDK | `raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md` |
+| OpenZeppelin audited contracts, SDKs, and Contract Wizard | `raw.githubusercontent.com/ggoldani/stellarskills/main/openzeppelin/SKILL.md` |
 
 ### Context
 | Task | Fetch |
 |------|-------|
-| Why Stellar — use cases, honest tradeoffs, ecosystem | `stellarskills.vercel.app/why/SKILL.md` |
+| Why Stellar — use cases, honest tradeoffs, ecosystem | `raw.githubusercontent.com/ggoldani/stellarskills/main/why/SKILL.md` |
 
 ---
 
@@ -132,4 +132,4 @@ Every transaction must be signed with the correct network passphrase:
 
 ---
 
-*stellarskills.vercel.app — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main — MIT License*

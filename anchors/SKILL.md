@@ -108,4 +108,4 @@ const tx = new TransactionBuilder(account, { fee: BASE_FEE })
 
 ---
 
-*stellarskills.vercel.app/anchors — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/anchors — MIT License*

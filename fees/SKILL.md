@@ -141,4 +141,4 @@ await server.submitTransaction(feeBump);
 
 ---
 
-*stellarskills.vercel.app/fees — MIT License*
+*raw.githubusercontent.com/ggoldani/stellarskills/main/fees — MIT License*
