@@ -84,6 +84,16 @@ function getSkillPath(skill) {
   return path.join(rootDir, skill, 'SKILL.md');
 }
 
+function readSkillContent(skillPath) {
+  let content = fs.readFileSync(skillPath, 'utf-8');
+  // Strip YAML frontmatter if it exists, handling both \n and \r\n
+  const frontmatterRegex = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
+  if (frontmatterRegex.test(content)) {
+    content = content.replace(frontmatterRegex, '').trimStart();
+  }
+  return content;
+}
+
 function handleGet(skill) {
   if (!skill) {
     console.error('Error: You must provide a skill name.\nExample: stellarskills get soroban');
@@ -99,7 +109,7 @@ function handleGet(skill) {
 
   const skillPath = getSkillPath(skill);
   if (fs.existsSync(skillPath)) {
-    const content = fs.readFileSync(skillPath, 'utf-8');
+    const content = readSkillContent(skillPath);
     console.log(content);
   } else {
     console.error(`Error: Skill '${skill}' not found.`);
@@ -146,7 +156,7 @@ function handleCombine(requestedSkills) {
   const contents = requestedSkills.map(skill => {
     const skillPath = getSkillPath(skill);
     try {
-      return fs.readFileSync(skillPath, 'utf-8');
+      return readSkillContent(skillPath);
     } catch (e) {
       console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
       process.exit(1);
@@ -175,7 +185,7 @@ function handleCopy(requestedSkills) {
 
   const contents = requestedSkills.map(skill => {
     try {
-      return fs.readFileSync(getSkillPath(skill), 'utf-8');
+      return readSkillContent(getSkillPath(skill));
     } catch (e) {
       console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
       process.exit(1);
@@ -279,7 +289,7 @@ function handleRules(ide, requestedSkills) {
 
   const contents = requestedSkills.map(skill => {
     try {
-      return fs.readFileSync(getSkillPath(skill), 'utf-8');
+      return readSkillContent(getSkillPath(skill));
     } catch (e) {
       console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
       process.exit(1);
@@ -408,7 +418,7 @@ function handleSystem(argsArray) {
 
   const contents = requestedSkills.map(skill => {
     try {
-      return fs.readFileSync(getSkillPath(skill), 'utf-8');
+      return readSkillContent(getSkillPath(skill));
     } catch (e) {
       console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
       process.exit(1);

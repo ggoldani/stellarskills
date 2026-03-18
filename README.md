@@ -79,6 +79,25 @@ Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that
 
 ---
 
+## 🔌 Agent Marketplace Plugins
+
+Stellarskills is natively structured to be installed as a dynamic skill in various AI agent ecosystems.
+
+**For Claude Code:**
+Teach your Claude Code agent to use the Stellarskills CLI automatically by installing our repository plugin:
+```bash
+claude plugin install https://github.com/ggoldani/stellarskills
+```
+
+**For OpenClaw / ClawHub:**
+Every skill directory in this repository is a valid, independently installable AgentSkill. You can install the entire knowledge base into your OpenClaw agent by running:
+```bash
+clawhub install stellarskills
+```
+*(Or install granular skills: `clawhub install stellarskills-soroban`)*
+
+---
+
 ## 📚 The Skill Index
 
 | Skill Domain | URL | Description |

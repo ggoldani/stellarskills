@@ -1,3 +1,8 @@
+---
+name: stellarskills-local-node
+description: Running a local node, Soroban RPC, testing environment
+---
+
 # STELLARSKILLS — Local Node & Quickstart Docker
 
 > How to run a local Stellar blockchain, RPC, and Friendbot. The Stellar equivalent of Hardhat Node or Anvil.

@@ -1,3 +1,8 @@
+---
+name: stellarskills-frontend
+description: Frontend integration — Freighter, WalletConnect, app architecture
+---
+
 # STELLARSKILLS — Frontend Integration
 
 > Connecting web apps to Stellar. Stellar Wallets Kit, Freighter API, signing Soroban transactions, and secure SEP-10 Web3 Auth.

@@ -1,3 +1,8 @@
+---
+name: stellarskills-accounts
+description: Understanding accounts, keypairs, signers, sponsorship
+---
+
 # STELLARSKILLS — Accounts
 
 > Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts.

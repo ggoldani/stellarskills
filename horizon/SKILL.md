@@ -1,3 +1,8 @@
+---
+name: stellarskills-horizon
+description: Horizon REST API — accounts, transactions, effects, streaming
+---
+
 # STELLARSKILLS — Horizon API
 
 > Stellar's REST API for accounts, transactions, operations, effects, order books, streaming. Not for Soroban — see /rpc/SKILL.md for smart contracts.

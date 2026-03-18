@@ -1,3 +1,8 @@
+---
+name: stellarskills-tools
+description: SDKs, wallets, explorers, Stellar Lab, CLI
+---
+
 # STELLARSKILLS — Tools & SDKs
 
 > The essential tools, SDKs, wallets, and explorers for building on Stellar.

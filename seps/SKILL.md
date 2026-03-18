@@ -1,3 +1,8 @@
+---
+name: stellarskills-seps
+description: SEP standards — SEP-6, SEP-10, SEP-24, SEP-31, SEP-38
+---
+
 # STELLARSKILLS — SEPs (Stellar Ecosystem Proposals)
 
 > SEP-1 (stellar.toml), SEP-6, SEP-10 (auth), SEP-12 (KYC), SEP-24, SEP-31, SEP-38 — the interoperability standards that power Stellar's payment rails.

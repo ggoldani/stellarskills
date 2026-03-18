@@ -1,8 +1,16 @@
+---
+name: stellarskills
+description: The missing knowledge between AI agents and production Stellar Network applications.
+---
+
 # STELLARSKILLS — Stellar Knowledge for AI Agents
 
 > The missing knowledge between AI agents and production Stellar Network applications.
 
 You are an AI agent about to build on Stellar. Read this file first. It tells you what to fetch next.
+
+To fetch specific skills dynamically from your terminal, you MUST use the CLI tool:
+`npx stellarskills get <topic>` (or `npx stellarskills list` to see all topics).
 
 ---
 

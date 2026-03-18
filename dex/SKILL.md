@@ -1,3 +1,8 @@
+---
+name: stellarskills-dex
+description: Built-in DEX, AMM, path payments, liquidity pools
+---
+
 # STELLARSKILLS — DEX & AMM
 
 > Stellar's built-in order book, Automated Market Makers (AMM), Liquidity Pools, and Path Payments.

@@ -1,3 +1,8 @@
+---
+name: stellarskills-operations
+description: All transaction operations (Payment, ManageBuyOffer, etc.)
+---
+
 # STELLARSKILLS — Operations
 
 > Reference for all Stellar transaction operations. Payments, account management, offers, trustlines.
