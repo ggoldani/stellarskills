@@ -36,6 +36,45 @@ curl -s https://raw.githubusercontent.com/ggoldani/stellarskills/main/accounts/S
 curl -s https://raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md
 ```
 
+**Use the CLI:**
+The `stellarskills` CLI lets you quickly find, read, or grab the URL for any skill directly from your terminal.
+
+```bash
+# List all available skills
+npx stellarskills list
+
+# Print the raw markdown content of a skill
+npx stellarskills get soroban
+
+# Pipe it straight into a prompt file
+npx stellarskills get soroban > prompt.txt
+
+# Get just the raw GitHub URL
+npx stellarskills url accounts
+
+# Combine multiple skills into a single prompt context
+npx stellarskills combine accounts soroban security > prompt.txt
+
+# Find which domain contains a specific concept
+npx stellarskills search "trustline"
+
+# Copy raw markdown to your system clipboard (ready to paste into ChatGPT/Claude)
+npx stellarskills copy soroban security
+
+# Instantly embed knowledge into your IDE agent (.cursorrules, .clinerules, .windsurfrules)
+npx stellarskills rules cursor accounts
+npx stellarskills rules cline dex assets
+
+# Output a full Markdown index so an AI agent can self-discover what to fetch next
+npx stellarskills index
+
+# Diagnose your environment (Stellar CLI, Rust, wasm32 target, Node) to prevent agent hallucinations
+npx stellarskills doctor
+
+# Generate the ultimate System Prompt for ChatGPT/Claude containing expert rules + knowledge
+npx stellarskills system soroban dex --instruction "Write an AMM pool contract" > prompt.txt
+```
+
 Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that can resolve HTTP URLs.
 
 ---
