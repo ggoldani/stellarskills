@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 
 // Resolve directory paths properly in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -30,6 +30,8 @@ Commands:
   copy <skill1> [skill2] ...     Copy combined skills directly to your system clipboard.
   rules <ide> <skill1> ...       Append combined skills directly to your .cursorrules, .clinerules, or .windsurfrules.
   index                          Output a full, agent-friendly Markdown map of all skills and their descriptions.
+  doctor                         Verify if your local environment is ready for Stellar and Soroban development.
+  system <skills> [--instruction] Output the ultimate AI System Prompt containing an expert persona and requested skills.
 
 Examples:
   npx stellarskills list
@@ -317,6 +319,117 @@ function handleIndex() {
   console.log();
 }
 
+function handleDoctor() {
+  console.log('🩺 StellarSkills Environment Doctor\n');
+  console.log('Checking your system for required Stellar & Soroban tools...\n');
+
+  const checks = [
+    { name: 'Node.js', cmd: 'node -v', isRequired: true },
+    { name: 'Rust Compiler', cmd: 'rustc --version', isRequired: true },
+    { name: 'Cargo', cmd: 'cargo --version', isRequired: true },
+    { name: 'Stellar CLI', cmd: 'stellar --version', isRequired: true },
+    { name: 'WASM Target (wasm32-unknown-unknown)', cmd: 'rustup target list | grep wasm32-unknown-unknown | grep installed', isRequired: true }
+  ];
+
+  let allPassed = true;
+
+  checks.forEach(check => {
+    try {
+      // Execute the command synchronously
+      const output = execSync(check.cmd, { stdio: 'pipe', encoding: 'utf-8' }).trim();
+
+      // If output is empty (e.g. grep found nothing), treat as missing for the WASM check
+      if (!output) {
+        throw new Error('Target not found');
+      }
+
+      // Keep output concise (first line only)
+      const shortOutput = output.split('\n')[0];
+      console.log(`✅ [Installed] ${check.name}: ${shortOutput}`);
+    } catch (error) {
+      console.log(`❌ [Missing]   ${check.name}`);
+      if (check.isRequired) {
+        allPassed = false;
+      }
+    }
+  });
+
+  console.log('\n---');
+  if (allPassed) {
+    console.log('🎉 Your environment is fully configured to build on Stellar & Soroban!');
+  } else {
+    console.log('⚠️  Your environment is missing required dependencies.');
+    console.log('👉 Agents: Please install the missing tools using `cargo install --locked stellar-cli` or `rustup target add wasm32-unknown-unknown` before attempting to compile contracts.');
+  }
+}
+
+function handleSystem(argsArray) {
+  let requestedSkills = [];
+  let instruction = '';
+
+  // Parse arguments to separate skills and the optional --instruction flag
+  for (let i = 0; i < argsArray.length; i++) {
+    if (argsArray[i] === '--instruction') {
+      if (i + 1 < argsArray.length) {
+        instruction = argsArray[i + 1];
+        i++; // skip the instruction text
+      } else {
+        console.error('Error: --instruction requires a string argument.');
+        process.exit(1);
+      }
+    } else {
+      requestedSkills.push(argsArray[i]);
+    }
+  }
+
+  if (requestedSkills.length === 0) {
+    console.error('Error: You must provide at least one skill name.\nExample: stellarskills system soroban dex --instruction "Create an AMM pool"');
+    process.exit(1);
+  }
+
+  const availableSkills = getAvailableSkills();
+  const missingSkills = requestedSkills.filter(skill => !availableSkills.includes(skill));
+
+  if (missingSkills.length > 0) {
+    console.error(`Error: The following requested skills were not found: ${missingSkills.join(', ')}`);
+    process.exit(1);
+  }
+
+  const contents = requestedSkills.map(skill => {
+    try {
+      return fs.readFileSync(getSkillPath(skill), 'utf-8');
+    } catch (e) {
+      console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+  const separator = '\n\n--------------------------------------------------------------------------------\n\n';
+  const combinedKnowledge = contents.join(separator);
+
+  const expertPersona = `You are an expert software engineer specializing in the Stellar Network and Soroban smart contracts.
+You must strictly adhere to the following architectural rules:
+1. Stellar uses typed Operations, not EVM calldata.
+2. Smart contracts are written in memory-safe Rust and compiled to WASM.
+3. You must always use the \`stellar-cli\` tool to build, simulate, and deploy contracts. You must NEVER use the deprecated \`soroban-cli\`.
+4. You must never invent or hallucinate EVM-like concepts (like msg.sender or Solidity mappings) when writing Soroban.
+
+Below is your verified knowledge base to complete the user's task. Read it carefully.
+
+### STELLAR KNOWLEDGE BASE:
+
+${combinedKnowledge}
+`;
+
+  let finalOutput = expertPersona;
+
+  if (instruction) {
+    finalOutput += `\n### YOUR TASK:\n\n${instruction}\n`;
+  }
+
+  console.log(finalOutput);
+}
+
 const command = args[0];
 
 switch (command) {
@@ -343,6 +456,12 @@ switch (command) {
     break;
   case 'index':
     handleIndex();
+    break;
+  case 'doctor':
+    handleDoctor();
+    break;
+  case 'system':
+    handleSystem(args.slice(1));
     break;
   case 'help':
   case '--help':

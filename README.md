@@ -67,6 +67,12 @@ npx stellarskills rules cline dex assets
 
 # Output a full Markdown index so an AI agent can self-discover what to fetch next
 npx stellarskills index
+
+# Diagnose your environment (Stellar CLI, Rust, wasm32 target, Node) to prevent agent hallucinations
+npx stellarskills doctor
+
+# Generate the ultimate System Prompt for ChatGPT/Claude containing expert rules + knowledge
+npx stellarskills system soroban dex --instruction "Write an AMM pool contract" > prompt.txt
 ```
 
 Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that can resolve HTTP URLs.
