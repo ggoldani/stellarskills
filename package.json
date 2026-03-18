@@ -2,11 +2,14 @@
   "name": "stellarskills",
   "version": "1.0.0",
   "description": "Stellar Network knowledge engineered specifically for AI agents",
-  "main": "index.js",
   "type": "module",
   "bin": {
     "stellarskills": "./bin/cli.js"
   },
+  "files": [
+    "bin",
+    "**/*.md"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
