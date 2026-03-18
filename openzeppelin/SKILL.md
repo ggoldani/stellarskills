@@ -1,6 +1,6 @@
 ---
 name: stellarskills-openzeppelin
-description: OpenZeppelin audited contracts, SDKs, and Contract Wizard
+description: OpenZeppelin's audited smart contracts, Contract Wizard, and developer toolings for Stellar's Soroban (Rust) environment.
 ---
 
 # STELLARSKILLS — OpenZeppelin

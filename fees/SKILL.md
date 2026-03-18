@@ -1,6 +1,6 @@
 ---
 name: stellarskills-fees
-description: Fees, base fee, resource fees, fee bump
+description: Stellar transaction fees, base fee, surge pricing, resource fees (Soroban), and fee bumps.
 ---
 
 # STELLARSKILLS — Fees

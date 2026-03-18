@@ -1,6 +1,6 @@
 ---
 name: stellarskills-storage
-description: Soroban storage — Instance, Persistent, Temporary, Events
+description: How to manage state in Soroban. Understanding Persistent, Temporary, and Instance storage, TTL/Rent, and migrating from Solidity mappings.
 ---
 
 # STELLARSKILLS — Soroban Host Storage (Data Structures)

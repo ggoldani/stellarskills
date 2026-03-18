@@ -1,6 +1,6 @@
 ---
 name: stellarskills-rpc
-description: Soroban RPC — simulate, send, getLedger, getTransaction
+description: Soroban's JSON-RPC API for smart contracts. Simulation, invocation, fetching ledger state, and getting events.
 ---
 
 # STELLARSKILLS — Soroban RPC

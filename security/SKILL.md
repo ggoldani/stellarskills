@@ -1,6 +1,6 @@
 ---
 name: stellarskills-security
-description: Soroban security patterns, auth, reentrancy
+description: Critical security patterns, common vulnerabilities, and best practices for writing Soroban smart contracts in Rust.
 ---
 
 # STELLARSKILLS — Soroban Security
