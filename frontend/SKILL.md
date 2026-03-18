@@ -153,16 +153,20 @@ const { transaction, network_passphrase } = await challengeResponse.json();
 // 2. Sign challenge with Freighter
 const signedXdr = await signTransaction(transaction, { network: "TESTNET" });
 
-// 3. Send signed challenge back to backend to get JWT
-const tokenResponse = await fetch("/api/auth/token", {
+// 3. Send signed challenge back to backend
+// The backend should verify the XDR and set a secure cookie
+// Note: Backend must NOT return the JWT in the response body.
+// Example header: Set-Cookie: jwt=...; HttpOnly; Secure; SameSite=Strict
+await fetch("/api/auth/token", {
   method: "POST",
   body: JSON.stringify({ transaction: signedXdr }),
+  // credentials: "include", // Required if backend is on a different subdomain
 });
-const { jwt } = await tokenResponse.json();
 
-// 4. Use JWT for subsequent requests
-localStorage.setItem("auth_token", jwt);
+// 4. Subsequent requests will automatically include the cookie
 ```
+
+> ⚠️ **Security Note:** Never store JWTs in `localStorage`. This makes your application vulnerable to Cross-Site Scripting (XSS) attacks. Always use **`HttpOnly`**, **`Secure`**, and **`SameSite=Strict`** cookies to store sensitive session tokens. Using `HttpOnly` ensures the token is inaccessible to JavaScript. Note that while cookies protect against XSS token theft, you must implement protection against Cross-Site Request Forgery (CSRF) on your backend.
 
 ---
 

@@ -90,7 +90,7 @@ Used as the auth layer for SEP-6, SEP-24, SEP-31, SEP-38.
 1. Client → GET /auth?account=G...           → Anchor returns challenge transaction (XDR)
 2. Client signs the challenge transaction     → (no broadcast, just sign)
 3. Client → POST /auth { transaction: XDR }  → Anchor verifies, returns JWT
-4. Client uses JWT in subsequent API calls    → Authorization: Bearer <jwt>
+4. Client uses session token in subsequent API calls (via Cookies for web)
 ```
 
 ### Step 1: Get challenge (server-side, anchor implements this)
@@ -113,19 +113,23 @@ const tx = new Transaction(transaction, network_passphrase);
 tx.sign(Keypair.fromSecret(secret));
 
 // Submit signed challenge
-const authRes = await fetch("https://api.anchor.com/auth", {
+// The anchor should verify the XDR and set a secure, HttpOnly cookie
+await fetch("https://api.anchor.com/auth", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ transaction: tx.toXDR() }),
+  // credentials: "include", // Required if anchor is on a different subdomain
 });
-const { token } = await authRes.json();
-// token is a JWT, store and use in subsequent requests
 ```
 
+> ⚠️ **Security Note:** In browser environments, always use **`HttpOnly`**, **`Secure`**, and **`SameSite=Strict`** cookies to store sensitive session tokens like JWTs. Never store them in `localStorage` or `sessionStorage` as they are vulnerable to XSS. When using cookies, ensure your backend is protected against Cross-Site Request Forgery (CSRF).
+
 ### Step 4: Use JWT
+Subsequent requests to the anchor will automatically include the `HttpOnly` cookie.
+
 ```javascript
 const response = await fetch("https://api.anchor.com/transactions", {
-  headers: { Authorization: `Bearer ${token}` },
+  // credentials: "include", // Required if anchor is on a different subdomain
 });
 ```
 
@@ -148,7 +152,7 @@ const transferServer = "https://api.anchor.com"; // from toml
 ### GET /info — What the anchor supports
 ```javascript
 const info = await fetch(`${transferServer}/info`, {
-  headers: { Authorization: `Bearer ${jwt}` },
+  // credentials: "include",
 }).then(r => r.json());
 
 // info.deposit["USDC"] — deposit info for USDC
@@ -164,7 +168,7 @@ const deposit = await fetch(
     amount: "100",
     type: "bank_account",
   }),
-  { headers: { Authorization: `Bearer ${jwt}` } }
+  { /* credentials: "include" */ }
 ).then(r => r.json());
 
 // deposit.how — instructions for the user to send fiat
@@ -182,7 +186,7 @@ const withdrawal = await fetch(
     dest_extra: "0001/12345-6",
     amount: "500",
   }),
-  { headers: { Authorization: `Bearer ${jwt}` } }
+  { /* credentials: "include" */ }
 ).then(r => r.json());
 
 // withdrawal.account_id — Stellar address to send tokens to
@@ -194,7 +198,7 @@ const withdrawal = await fetch(
 // Poll until status is "completed" or "error"
 const tx = await fetch(
   `${transferServer}/transaction?id=${transactionId}`,
-  { headers: { Authorization: `Bearer ${jwt}` } }
+  { /* credentials: "include" */ }
 ).then(r => r.json());
 
 console.log(tx.transaction.status);
@@ -220,7 +224,6 @@ SEP-24 is similar to SEP-6 but uses an interactive web UI (popup or iframe) for 
 const res = await fetch(`${sep24Server}/transactions/deposit/interactive`, {
   method: "POST",
   headers: {
-    Authorization: `Bearer ${jwt}`,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
@@ -228,6 +231,7 @@ const res = await fetch(`${sep24Server}/transactions/deposit/interactive`, {
     account: userPublicKey,
     amount: "100",
   }),
+  // credentials: "include"
 }).then(r => r.json());
 
 // Open this URL for the user
@@ -237,7 +241,7 @@ window.open(res.url, "_blank", "width=600,height=700");
 const pollInterval = setInterval(async () => {
   const status = await fetch(
     `${sep24Server}/transaction?id=${res.id}`,
-    { headers: { Authorization: `Bearer ${jwt}` } }
+    { /* credentials: "include" */ }
   ).then(r => r.json());
 
   if (status.transaction.status === "completed") {
@@ -258,7 +262,6 @@ SEP-12 is used by anchors that require KYC. Clients submit user information (nam
 await fetch(`${anchorKycServer}/customer`, {
   method: "PUT",
   headers: {
-    Authorization: `Bearer ${jwt}`,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
@@ -270,12 +273,13 @@ await fetch(`${anchorKycServer}/customer`, {
     id_type: "cpf",
     id_number: "123.456.789-00",
   }),
+  // credentials: "include"
 });
 
 // Check KYC status
 const customer = await fetch(
   `${anchorKycServer}/customer?account=${userPublicKey}`,
-  { headers: { Authorization: `Bearer ${jwt}` } }
+  { /* credentials: "include" */ }
 ).then(r => r.json());
 
 console.log(customer.status); // NEEDS_INFO | PROCESSING | ACCEPTED | REJECTED
@@ -292,7 +296,6 @@ SEP-31 enables direct anchor-to-anchor payments — a sender in one country send
 const payment = await fetch(`${sep31Server}/transactions`, {
   method: "POST",
   headers: {
-    Authorization: `Bearer ${jwt}`,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
@@ -309,6 +312,7 @@ const payment = await fetch(`${sep31Server}/transactions`, {
       },
     },
   }),
+  // credentials: "include"
 }).then(r => r.json());
 
 // payment.id — transaction ID to poll
@@ -324,8 +328,9 @@ SEP-38 provides a request-for-quote mechanism. Get exchange rates and firm quote
 
 ```javascript
 // GET /prices — available pairs
-const prices = await fetch(`${sep38Server}/prices?sell_asset=stellar:USDC:${USDC_ISSUER}`)
-  .then(r => r.json());
+const prices = await fetch(`${sep38Server}/prices?sell_asset=stellar:USDC:${USDC_ISSUER}`, {
+  // credentials: "include"
+}).then(r => r.json());
 
 // GET /price — indicative rate
 const price = await fetch(
@@ -333,14 +338,14 @@ const price = await fetch(
     sell_asset: `stellar:USDC:${USDC_ISSUER}`,
     buy_asset: "iso4217:BRL",
     sell_amount: "100",
-  })
+  }),
+  { /* credentials: "include" */ }
 ).then(r => r.json());
 
 // POST /quote — firm quote (binding for limited time)
 const quote = await fetch(`${sep38Server}/quote`, {
   method: "POST",
   headers: {
-    Authorization: `Bearer ${jwt}`,
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
@@ -348,6 +353,7 @@ const quote = await fetch(`${sep38Server}/quote`, {
     buy_asset: "iso4217:BRL",
     sell_amount: "100",
   }),
+  // credentials: "include"
 }).then(r => r.json());
 
 // quote.id — use in SEP-6/24/31 request
@@ -367,7 +373,7 @@ When building an anchor or integrating with one:
 - [ ] SEP-10 auth endpoint returns valid challenge transactions
 - [ ] Challenge transactions have valid time bounds (±15 min)
 - [ ] JWT tokens expire (recommend 24h max)
-- [ ] All SEP endpoints protected by JWT
+- [ ] All SEP endpoints protected by secure session tokens (cookies recommended for web)
 - [ ] `/info` endpoint accurate for supported assets and limits
 - [ ] Transaction status polling supported with all status values
 - [ ] Memo handling: always include memo when anchor specifies one
