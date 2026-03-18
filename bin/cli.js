@@ -90,6 +90,13 @@ function handleGet(skill) {
     process.exit(1);
   }
 
+  const availableSkills = getAvailableSkills();
+  if (!availableSkills.includes(skill)) {
+    console.error(`Error: Skill '${skill}' not found.`);
+    console.log('Run `stellarskills list` to see available skills.');
+    process.exit(1);
+  }
+
   const skillPath = getSkillPath(skill);
   if (fs.existsSync(skillPath)) {
     const content = fs.readFileSync(skillPath, 'utf-8');
@@ -328,7 +335,7 @@ function handleDoctor() {
     { name: 'Rust Compiler', cmd: 'rustc --version', isRequired: true },
     { name: 'Cargo', cmd: 'cargo --version', isRequired: true },
     { name: 'Stellar CLI', cmd: 'stellar --version', isRequired: true },
-    { name: 'WASM Target (wasm32-unknown-unknown)', cmd: 'rustup target list | grep wasm32-unknown-unknown | grep installed', isRequired: true }
+    { name: 'WASM Target (wasm32-unknown-unknown)', cmd: 'rustup target list', isRequired: true, validator: (out) => out.includes('wasm32-unknown-unknown (installed)') }
   ];
 
   let allPassed = true;
@@ -338,13 +345,17 @@ function handleDoctor() {
       // Execute the command synchronously
       const output = execSync(check.cmd, { stdio: 'pipe', encoding: 'utf-8' }).trim();
 
-      // If output is empty (e.g. grep found nothing), treat as missing for the WASM check
-      if (!output) {
-        throw new Error('Target not found');
+      // If a custom validator exists, run it
+      if (check.validator && !check.validator(output)) {
+        throw new Error('Validation failed');
       }
 
-      // Keep output concise (first line only)
-      const shortOutput = output.split('\n')[0];
+      // Keep output concise (first line only unless validator is used)
+      let shortOutput = output.split('\n')[0];
+      if (check.validator) {
+          shortOutput = 'installed';
+      }
+
       console.log(`✅ [Installed] ${check.name}: ${shortOutput}`);
     } catch (error) {
       console.log(`❌ [Missing]   ${check.name}`);
