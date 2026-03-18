@@ -3,6 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
 
 // Resolve directory paths properly in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -26,6 +27,9 @@ Commands:
   url <skill>                    Print the direct raw GitHub URL of a specific skill.
   combine <skill1> [skill2] ...  Combine multiple skills into a single Markdown output.
   search "<query>"               Search across all skills for a specific term.
+  copy <skill1> [skill2] ...     Copy combined skills directly to your system clipboard.
+  rules <ide> <skill1> ...       Append combined skills directly to your .cursorrules, .clinerules, or .windsurfrules.
+  index                          Output a full, agent-friendly Markdown map of all skills and their descriptions.
 
 Examples:
   npx stellarskills list
@@ -33,6 +37,9 @@ Examples:
   npx stellarskills url accounts
   npx stellarskills combine accounts soroban security > prompt.txt
   npx stellarskills search "trustline"
+  npx stellarskills copy dex
+  npx stellarskills rules cursor accounts soroban
+  npx stellarskills index
 `);
 }
 
@@ -143,6 +150,66 @@ function handleCombine(requestedSkills) {
   console.log(combinedOutput);
 }
 
+function handleCopy(requestedSkills) {
+  if (!requestedSkills || requestedSkills.length === 0) {
+    console.error('Error: You must provide at least one skill name to copy.\nExample: stellarskills copy accounts soroban');
+    process.exit(1);
+  }
+
+  const availableSkills = getAvailableSkills();
+  const missingSkills = requestedSkills.filter(skill => !availableSkills.includes(skill));
+
+  if (missingSkills.length > 0) {
+    console.error(`Error: The following requested skills were not found: ${missingSkills.join(', ')}`);
+    process.exit(1);
+  }
+
+  const contents = requestedSkills.map(skill => {
+    try {
+      return fs.readFileSync(getSkillPath(skill), 'utf-8');
+    } catch (e) {
+      console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+  const separator = '\n\n--------------------------------------------------------------------------------\n\n';
+  const combinedOutput = contents.join(separator);
+
+  let command;
+  switch (process.platform) {
+    case 'darwin':
+      command = 'pbcopy';
+      break;
+    case 'win32':
+      command = 'clip';
+      break;
+    case 'linux':
+      // Fallback xclip for linux. If missing, it will error out cleanly.
+      command = 'xclip -selection clipboard';
+      break;
+    default:
+      console.error('Error: Clipboard copy is not supported on this operating system.');
+      process.exit(1);
+  }
+
+  try {
+    const child = spawn(command, { shell: true, stdio: ['pipe', 'ignore', 'ignore'] });
+    child.stdin.write(combinedOutput);
+    child.stdin.end();
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        console.log(`\n✅ Copied the raw Markdown for [${requestedSkills.join(', ')}] to your clipboard.\n`);
+      } else {
+        console.error(`\n❌ Failed to copy to clipboard. Ensure '${command}' is installed on your system.\n`);
+      }
+    });
+  } catch (error) {
+    console.error(`\n❌ Failed to copy to clipboard: ${error.message}\n`);
+  }
+}
+
 function handleSearch(query) {
   if (!query) {
     console.error('Error: You must provide a search query.\nExample: stellarskills search "trustline"');
@@ -175,6 +242,81 @@ function handleSearch(query) {
   console.log(); // Trailing newline for clean output
 }
 
+function handleRules(ide, requestedSkills) {
+  if (!ide || !requestedSkills || requestedSkills.length === 0) {
+    console.error('Error: You must provide an IDE and at least one skill.\nExample: stellarskills rules cursor accounts soroban');
+    process.exit(1);
+  }
+
+  const supportedIdes = {
+    'cursor': '.cursorrules',
+    'cline': '.clinerules',
+    'windsurf': '.windsurfrules'
+  };
+
+  const filename = supportedIdes[ide.toLowerCase()];
+  if (!filename) {
+    console.error(`Error: Unsupported IDE '${ide}'. Supported IDEs are: ${Object.keys(supportedIdes).join(', ')}`);
+    process.exit(1);
+  }
+
+  const availableSkills = getAvailableSkills();
+  const missingSkills = requestedSkills.filter(skill => !availableSkills.includes(skill));
+
+  if (missingSkills.length > 0) {
+    console.error(`Error: The following requested skills were not found: ${missingSkills.join(', ')}`);
+    process.exit(1);
+  }
+
+  const contents = requestedSkills.map(skill => {
+    try {
+      return fs.readFileSync(getSkillPath(skill), 'utf-8');
+    } catch (e) {
+      console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
+      process.exit(1);
+    }
+  });
+
+  const separator = '\n\n--------------------------------------------------------------------------------\n\n';
+  const combinedOutput = separator + contents.join(separator) + '\n';
+  const targetPath = path.join(process.cwd(), filename);
+
+  try {
+    fs.appendFileSync(targetPath, combinedOutput, 'utf-8');
+    console.log(`\n✅ Appended Stellar knowledge [${requestedSkills.join(', ')}] to ${filename} in the current directory.\n`);
+  } catch (error) {
+    console.error(`\n❌ Failed to write to ${filename}: ${error.message}\n`);
+    process.exit(1);
+  }
+}
+
+function handleIndex() {
+  const availableSkills = getAvailableSkills();
+  console.log('## StellarSkills Index\n');
+
+  availableSkills.forEach(skill => {
+    const skillPath = getSkillPath(skill);
+    let description = 'No description available.';
+
+    try {
+      const content = fs.readFileSync(skillPath, 'utf-8');
+      const lines = content.split('\n');
+      for (const line of lines) {
+        if (line.trim().startsWith('> ')) {
+          // Remove the '> ' prefix
+          description = line.trim().substring(2).trim();
+          break;
+        }
+      }
+    } catch (e) {
+      // Ignore read errors
+    }
+
+    console.log(`- **${skill}**: ${description}`);
+  });
+  console.log();
+}
+
 const command = args[0];
 
 switch (command) {
@@ -192,6 +334,15 @@ switch (command) {
     break;
   case 'search':
     handleSearch(args[1]);
+    break;
+  case 'copy':
+    handleCopy(args.slice(1));
+    break;
+  case 'rules':
+    handleRules(args[1], args.slice(2));
+    break;
+  case 'index':
+    handleIndex();
     break;
   case 'help':
   case '--help':

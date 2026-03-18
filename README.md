@@ -57,6 +57,16 @@ npx stellarskills combine accounts soroban security > prompt.txt
 
 # Find which domain contains a specific concept
 npx stellarskills search "trustline"
+
+# Copy raw markdown to your system clipboard (ready to paste into ChatGPT/Claude)
+npx stellarskills copy soroban security
+
+# Instantly embed knowledge into your IDE agent (.cursorrules, .clinerules, .windsurfrules)
+npx stellarskills rules cursor accounts
+npx stellarskills rules cline dex assets
+
+# Output a full Markdown index so an AI agent can self-discover what to fetch next
+npx stellarskills index
 ```
 
 Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that can resolve HTTP URLs.
