@@ -139,8 +139,9 @@ When a pull request modifying `package.json` (bumping the version) and `SKILL.md
 1. **No fluff.** Agents don't need marketing copy.
 2. **Dense & Factual.** Prioritize code snippets, architectural rules, and exact endpoint structures.
 3. **Current & Runnable.** Ensure JavaScript and Rust snippets compile against the latest SDK versions (`@stellar/stellar-sdk` and `soroban-sdk`).
-4. **Isolate Context.** Each skill lives in its own folder (e.g., `/dex/SKILL.md`). Assume the agent only reads that specific file.
-5. **Highlight Errors.** Always include a "Common Errors" table mapping error codes (`tx_bad_seq`, `op_underfunded`) to their fixes. Agents use these to self-heal when transactions fail.
+4. **Verified by Official Docs.** Every new feature, endpoint, or SDK method added to a skill must be explicitly documented in official sources (e.g., `developers.stellar.org`, `soroban-sdk` docs, or official SDF repositories). Do not add unreleased alpha features or unverified announcements to avoid agent hallucinations.
+5. **Isolate Context.** Each skill lives in its own folder (e.g., `/dex/SKILL.md`). Assume the agent only reads that specific file.
+6. **Highlight Errors.** Always include a "Common Errors" table mapping error codes (`tx_bad_seq`, `op_underfunded`) to their fixes. Agents use these to self-heal when transactions fail.
 
 ---
 
