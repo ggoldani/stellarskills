@@ -1,6 +1,6 @@
 ---
 name: stellarskills-why
-description: Why Stellar — use cases, honest tradeoffs, ecosystem
+description: A sober, honest assessment of what Stellar is for, its tradeoffs, and why you would choose it over EVM or Solana.
 ---
 
 # STELLARSKILLS — Why Stellar?

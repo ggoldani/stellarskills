@@ -1,6 +1,6 @@
 ---
 name: stellarskills-operations
-description: All transaction operations (Payment, ManageBuyOffer, etc.)
+description: Reference for all Stellar transaction operations. Payments, account management, offers, trustlines.
 ---
 
 # STELLARSKILLS — Operations

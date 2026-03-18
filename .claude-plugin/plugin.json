@@ -10,6 +10,106 @@
       "name": "stellar-expert",
       "description": "Provides expert knowledge and rules for building applications on the Stellar Network using the stellarskills CLI.",
       "path": "skills/stellar-expert.md"
+    },
+    {
+      "name": "stellarskills",
+      "description": "The missing knowledge between AI agents and production Stellar Network applications.",
+      "path": "../SKILL.md"
+    },
+    {
+      "name": "stellarskills-accounts",
+      "description": "Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts.",
+      "path": "../accounts/SKILL.md"
+    },
+    {
+      "name": "stellarskills-anchors",
+      "description": "Fiat on/off-ramps on Stellar. Integration flows, stellar.toml, and the anchor ecosystem.",
+      "path": "../anchors/SKILL.md"
+    },
+    {
+      "name": "stellarskills-assets",
+      "description": "Custom asset issuance, trustlines, asset types, Stellar Asset Contract (SAC), USDC and stablecoins.",
+      "path": "../assets/SKILL.md"
+    },
+    {
+      "name": "stellarskills-dex",
+      "description": "Stellar's built-in order book, Automated Market Makers (AMM), Liquidity Pools, and Path Payments.",
+      "path": "../dex/SKILL.md"
+    },
+    {
+      "name": "stellarskills-fees",
+      "description": "Stellar transaction fees, base fee, surge pricing, resource fees (Soroban), and fee bumps.",
+      "path": "../fees/SKILL.md"
+    },
+    {
+      "name": "stellarskills-frontend",
+      "description": "Connecting web apps to Stellar. Stellar Wallets Kit, Freighter API, signing Soroban transactions, and secure SEP-10 Web3 Auth.",
+      "path": "../frontend/SKILL.md"
+    },
+    {
+      "name": "stellarskills-horizon",
+      "description": "Stellar's REST API for accounts, transactions, operations, effects, order books, streaming. Not for Soroban — see /rpc/SKILL.md for smart contracts.",
+      "path": "../horizon/SKILL.md"
+    },
+    {
+      "name": "stellarskills-local-node",
+      "description": "How to run a local Stellar blockchain, RPC, and Friendbot. The Stellar equivalent of Hardhat Node or Anvil.",
+      "path": "../local-node/SKILL.md"
+    },
+    {
+      "name": "stellarskills-openzeppelin",
+      "description": "OpenZeppelin's audited smart contracts, Contract Wizard, and developer toolings for Stellar's Soroban (Rust) environment.",
+      "path": "../openzeppelin/SKILL.md"
+    },
+    {
+      "name": "stellarskills-operations",
+      "description": "Reference for all Stellar transaction operations. Payments, account management, offers, trustlines.",
+      "path": "../operations/SKILL.md"
+    },
+    {
+      "name": "stellarskills-rpc",
+      "description": "Soroban's JSON-RPC API for smart contracts. Simulation, invocation, fetching ledger state, and getting events.",
+      "path": "../rpc/SKILL.md"
+    },
+    {
+      "name": "stellarskills-security",
+      "description": "Critical security patterns, common vulnerabilities, and best practices for writing Soroban smart contracts in Rust.",
+      "path": "../security/SKILL.md"
+    },
+    {
+      "name": "stellarskills-seps",
+      "description": "SEP-1 (stellar.toml), SEP-6, SEP-10 (auth), SEP-12 (KYC), SEP-24, SEP-31, SEP-38 — the interoperability standards that power Stellar's payment rails.",
+      "path": "../seps/SKILL.md"
+    },
+    {
+      "name": "stellarskills-soroban",
+      "description": "Stellar's smart contract platform. Rust/WASM contracts, storage types, auth, invocation, resource limits.",
+      "path": "../soroban/SKILL.md"
+    },
+    {
+      "name": "stellarskills-storage",
+      "description": "How to manage state in Soroban. Understanding Persistent, Temporary, and Instance storage, TTL/Rent, and migrating from Solidity mappings.",
+      "path": "../storage/SKILL.md"
+    },
+    {
+      "name": "stellarskills-testing",
+      "description": "How to test Soroban smart contracts using Rust's built-in testing framework and the Stellar CLI.",
+      "path": "../testing/SKILL.md"
+    },
+    {
+      "name": "stellarskills-tools",
+      "description": "The essential tools, SDKs, wallets, and explorers for building on Stellar.",
+      "path": "../tools/SKILL.md"
+    },
+    {
+      "name": "stellarskills-why",
+      "description": "A sober, honest assessment of what Stellar is for, its tradeoffs, and why you would choose it over EVM or Solana.",
+      "path": "../why/SKILL.md"
+    },
+    {
+      "name": "stellarskills-x402",
+      "description": "Pay-per-API calls for AI Agents on Stellar. Monetize endpoints natively without subscriptions or credit cards using HTTP 402.",
+      "path": "../x402/SKILL.md"
     }
   ]
 }

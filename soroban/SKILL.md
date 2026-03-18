@@ -1,6 +1,6 @@
 ---
 name: stellarskills-soroban
-description: Soroban smart contracts (Rust/WASM), syntax, architecture
+description: Stellar's smart contract platform. Rust/WASM contracts, storage types, auth, invocation, resource limits.
 ---
 
 # STELLARSKILLS — Soroban

@@ -1,6 +1,6 @@
 ---
 name: stellarskills-x402
-description: x402 protocol (Agent Economy) and HTTP payments
+description: Pay-per-API calls for AI Agents on Stellar. Monetize endpoints natively without subscriptions or credit cards using HTTP 402.
 ---
 
 # STELLARSKILLS — x402 Protocol (Agent Economy)

@@ -1,6 +1,6 @@
 ---
 name: stellarskills-anchors
-description: Anchor ecosystem, stellar.toml, on/off-ramp integration
+description: Fiat on/off-ramps on Stellar. Integration flows, stellar.toml, and the anchor ecosystem.
 ---
 
 # STELLARSKILLS — Anchors
