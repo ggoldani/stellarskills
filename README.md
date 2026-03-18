@@ -102,26 +102,26 @@ clawhub install stellarskills
 
 | Skill Domain | URL | Description |
 |--------------|-----|-------------|
-| **Root Index** | `raw.githubusercontent.com/ggoldani/stellarskills/main/SKILL.md` | The missing knowledge between AI agents and production Stellar Network applications. |
-| **Accounts** | `raw.githubusercontent.com/ggoldani/stellarskills/main/accounts/SKILL.md` | Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts. |
-| **Anchors** | `raw.githubusercontent.com/ggoldani/stellarskills/main/anchors/SKILL.md` | Fiat on/off-ramps on Stellar. Integration flows, stellar.toml, and the anchor ecosystem. |
-| **Assets** | `raw.githubusercontent.com/ggoldani/stellarskills/main/assets/SKILL.md` | Custom asset issuance, trustlines, asset types, Stellar Asset Contract (SAC), USDC and stablecoins. |
-| **DEX & AMM** | `raw.githubusercontent.com/ggoldani/stellarskills/main/dex/SKILL.md` | Stellar's built-in order book, Automated Market Makers (AMM), Liquidity Pools, and Path Payments. |
-| **Fees** | `raw.githubusercontent.com/ggoldani/stellarskills/main/fees/SKILL.md` | Stellar transaction fees, base fee, surge pricing, resource fees (Soroban), and fee bumps. |
-| **Frontend** | `raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md` | Connecting web apps to Stellar. Stellar Wallets Kit, Freighter API, signing Soroban transactions, and secure SEP-10 Web3 Auth. |
-| **Horizon API** | `raw.githubusercontent.com/ggoldani/stellarskills/main/horizon/SKILL.md` | Stellar's REST API for accounts, transactions, operations, effects, order books, streaming. Not for Soroban — see /rpc/SKILL.md for smart contracts. |
-| **Local Node** | `raw.githubusercontent.com/ggoldani/stellarskills/main/local-node/SKILL.md` | How to run a local Stellar blockchain, RPC, and Friendbot. The Stellar equivalent of Hardhat Node or Anvil. |
-| **OpenZeppelin** | `raw.githubusercontent.com/ggoldani/stellarskills/main/openzeppelin/SKILL.md` | OpenZeppelin's audited smart contracts, Contract Wizard, and developer toolings for Stellar's Soroban (Rust) environment. |
-| **Operations** | `raw.githubusercontent.com/ggoldani/stellarskills/main/operations/SKILL.md` | Reference for all Stellar transaction operations. Payments, account management, offers, trustlines. |
-| **Soroban RPC** | `raw.githubusercontent.com/ggoldani/stellarskills/main/rpc/SKILL.md` | Soroban's JSON-RPC API for smart contracts. Simulation, invocation, fetching ledger state, and getting events. |
-| **Security** | `raw.githubusercontent.com/ggoldani/stellarskills/main/security/SKILL.md` | Critical security patterns, common vulnerabilities, and best practices for writing Soroban smart contracts in Rust. |
-| **SEPs** | `raw.githubusercontent.com/ggoldani/stellarskills/main/seps/SKILL.md` | SEP-1 (stellar.toml), SEP-6, SEP-10 (auth), SEP-12 (KYC), SEP-24, SEP-31, SEP-38 — the interoperability standards that power Stellar's payment rails. |
-| **Soroban** | `raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md` | Stellar's smart contract platform. Rust/WASM contracts, storage types, auth, invocation, resource limits. |
-| **Storage** | `raw.githubusercontent.com/ggoldani/stellarskills/main/storage/SKILL.md` | How to manage state in Soroban. Understanding Persistent, Temporary, and Instance storage, TTL/Rent, and migrating from Solidity mappings. |
-| **Testing** | `raw.githubusercontent.com/ggoldani/stellarskills/main/testing/SKILL.md` | How to test Soroban smart contracts using Rust's built-in testing framework and the Stellar CLI. |
-| **Tools** | `raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md` | The essential tools, SDKs, wallets, and explorers for building on Stellar. |
-| **Why Stellar?** | `raw.githubusercontent.com/ggoldani/stellarskills/main/why/SKILL.md` | A sober, honest assessment of what Stellar is for, its tradeoffs, and why you would choose it over EVM or Solana. |
-| **x402** | `raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md` | Pay-per-API calls for AI Agents on Stellar. Monetize endpoints natively without subscriptions or credit cards using HTTP 402. |
+| **Root Index** | [`/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/SKILL.md) | The missing knowledge between AI agents and production Stellar Network applications. |
+| **Accounts** | [`/accounts/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/accounts/SKILL.md) | Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts. |
+| **Anchors** | [`/anchors/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/anchors/SKILL.md) | Fiat on/off-ramps on Stellar. Integration flows, stellar.toml, and the anchor ecosystem. |
+| **Assets** | [`/assets/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/assets/SKILL.md) | Custom asset issuance, trustlines, asset types, Stellar Asset Contract (SAC), USDC and stablecoins. |
+| **DEX & AMM** | [`/dex/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/dex/SKILL.md) | Stellar's built-in order book, Automated Market Makers (AMM), Liquidity Pools, and Path Payments. |
+| **Fees** | [`/fees/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/fees/SKILL.md) | Stellar transaction fees, base fee, surge pricing, resource fees (Soroban), and fee bumps. |
+| **Frontend** | [`/frontend/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md) | Connecting web apps to Stellar. Stellar Wallets Kit, Freighter API, signing Soroban transactions, and secure SEP-10 Web3 Auth. |
+| **Horizon API** | [`/horizon/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/horizon/SKILL.md) | Stellar's REST API for accounts, transactions, operations, effects, order books, streaming. Not for Soroban — see /rpc/SKILL.md for smart contracts. |
+| **Local Node** | [`/local-node/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/local-node/SKILL.md) | How to run a local Stellar blockchain, RPC, and Friendbot. The Stellar equivalent of Hardhat Node or Anvil. |
+| **OpenZeppelin** | [`/openzeppelin/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/openzeppelin/SKILL.md) | OpenZeppelin's audited smart contracts, Contract Wizard, and developer toolings for Stellar's Soroban (Rust) environment. |
+| **Operations** | [`/operations/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/operations/SKILL.md) | Reference for all Stellar transaction operations. Payments, account management, offers, trustlines. |
+| **Soroban RPC** | [`/rpc/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/rpc/SKILL.md) | Soroban's JSON-RPC API for smart contracts. Simulation, invocation, fetching ledger state, and getting events. |
+| **Security** | [`/security/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/security/SKILL.md) | Critical security patterns, common vulnerabilities, and best practices for writing Soroban smart contracts in Rust. |
+| **SEPs** | [`/seps/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/seps/SKILL.md) | SEP-1 (stellar.toml), SEP-6, SEP-10 (auth), SEP-12 (KYC), SEP-24, SEP-31, SEP-38 — the interoperability standards that power Stellar's payment rails. |
+| **Soroban** | [`/soroban/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md) | Stellar's smart contract platform. Rust/WASM contracts, storage types, auth, invocation, resource limits. |
+| **Storage** | [`/storage/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/storage/SKILL.md) | How to manage state in Soroban. Understanding Persistent, Temporary, and Instance storage, TTL/Rent, and migrating from Solidity mappings. |
+| **Testing** | [`/testing/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/testing/SKILL.md) | How to test Soroban smart contracts using Rust's built-in testing framework and the Stellar CLI. |
+| **Tools** | [`/tools/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md) | The essential tools, SDKs, wallets, and explorers for building on Stellar. |
+| **Why Stellar?** | [`/why/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/why/SKILL.md) | A sober, honest assessment of what Stellar is for, its tradeoffs, and why you would choose it over EVM or Solana. |
+| **x402** | [`/x402/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md) | Pay-per-API calls for AI Agents on Stellar. Monetize endpoints natively without subscriptions or credit cards using HTTP 402. |
 
 ---
 
