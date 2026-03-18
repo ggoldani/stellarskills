@@ -107,6 +107,12 @@ Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that
 
 We want this to be the single source of truth for AI agents building on Stellar. Is an agent consistently failing at a specific task? Did a Soroban RPC endpoint change? Open a PR!
 
+### Automated Publishing
+This repository uses GitHub Actions to automatically publish updates to NPM.
+When a pull request modifying `package.json` (bumping the version) and `SKILL.md` files is merged into the `main` branch, the `Publish to NPM` workflow will seamlessly deploy the latest version of the CLI.
+
+**Note for Maintainers:** Ensure your repository secrets contain `NPM_TOKEN` (an automation token from your npmjs.com account) for the CI/CD pipeline to function.
+
 ### The Golden Rules of a Skill File:
 1. **No fluff.** Agents don't need marketing copy.
 2. **Dense & Factual.** Prioritize code snippets, architectural rules, and exact endpoint structures.
