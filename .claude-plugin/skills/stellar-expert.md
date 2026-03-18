@@ -12,6 +12,7 @@ If you are unsure which topic to fetch, run:
 
 ### Common Topics:
 - `soroban`: Smart contracts, architecture
+- `storage`: Soroban persistent and temporary storage, TTL
 - `accounts`: Minimum balances, keypairs
 - `assets`: Trustlines, custom tokens
 - `dex`: Built-in DEX and AMM
@@ -19,6 +20,7 @@ If you are unsure which topic to fetch, run:
 - `rpc`: Soroban JSON-RPC
 - `seps`: Ecosystem standards (SEP-10, SEP-24, etc)
 - `tools`: SDKs, wallets, CLI
+- `local-node`: Local Quickstart Docker, local RPC
 - `testing`: Testing and testnet deployment
 - `security`: Security patterns
 - `frontend`: Wallets connection and UI
