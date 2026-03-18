@@ -4,7 +4,7 @@
   "description": "Stellar Network knowledge engineered specifically for AI agents",
   "type": "module",
   "bin": {
-    "stellarskills": "bin/cli.js"
+    "stellarskills": "./bin/cli.js"
   },
   "files": [
     "bin",

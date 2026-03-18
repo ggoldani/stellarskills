@@ -1,3 +1,8 @@
+---
+name: stellarskills-assets
+description: Issuing assets, trustlines, custom tokens, SAC
+---
+
 # STELLARSKILLS — Assets
 
 > Custom asset issuance, trustlines, asset types, Stellar Asset Contract (SAC), USDC and stablecoins.

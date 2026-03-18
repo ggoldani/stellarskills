@@ -1,3 +1,8 @@
+---
+name: stellarskills-soroban
+description: Soroban smart contracts (Rust/WASM), syntax, architecture
+---
+
 # STELLARSKILLS — Soroban
 
 > Stellar's smart contract platform. Rust/WASM contracts, storage types, auth, invocation, resource limits.
@@ -92,43 +97,11 @@ impl MyContract {
 
 ---
 
-## Storage Types
+## Storage Types & Data Structures
 
-Soroban has three storage tiers. Choose based on access pattern and how long data must live.
+Soroban does **not** use EVM-like global memory structures (like `mapping(address => uint)`). It uses explicit typed ledger storage (`Persistent`, `Instance`, `Temporary`) to prevent unbounded memory scaling and handle state rent (TTL).
 
-| Storage | Lifetime | Use Case | Cost |
-|---------|----------|----------|------|
-| `Instance` | As long as contract exists | Contract config, admin, global state | Cheapest per read |
-| `Persistent` | Until explicitly deleted or expired | User balances, per-user data | Medium |
-| `Temporary` | Short TTL (auto-expires) | Nonces, rate limits, short-lived state | Cheapest overall |
-
-```rust
-let env = &env;
-
-// Instance storage (lives with the contract)
-env.storage().instance().set(&DataKey::Admin, &admin_address);
-let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
-
-// Persistent storage (per-user, survives long-term)
-env.storage().persistent().set(&DataKey::Balance(user.clone()), &100_i128);
-let bal: i128 = env.storage().persistent().get(&DataKey::Balance(user)).unwrap_or(0);
-
-// Temporary storage (expires after ~1 day by default)
-env.storage().temporary().set(&DataKey::Nonce(user.clone()), &nonce);
-```
-
-### TTL Extension
-Persistent and temporary entries expire. Extend TTL when reading important data:
-```rust
-env.storage().persistent().extend_ttl(
-    &DataKey::Balance(user),
-    1_000,      // min ledgers to live
-    100_000,    // max ledgers to extend to
-);
-
-// Extend instance TTL (do this in every function that touches instance storage)
-env.storage().instance().extend_ttl(100, 100_000);
-```
+👉 **For detailed instructions on how to structure data, store maps, and manage TTL rent, you must read `/storage/SKILL.md`.**
 
 ---
 

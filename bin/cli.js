@@ -84,15 +84,32 @@ function getSkillPath(skill) {
   return path.join(rootDir, skill, 'SKILL.md');
 }
 
+function readSkillContent(skillPath) {
+  let content = fs.readFileSync(skillPath, 'utf-8');
+  // Strip YAML frontmatter if it exists, handling both \n and \r\n
+  const frontmatterRegex = /^---\r?\n[\s\S]*?\r?\n---\r?\n/;
+  if (frontmatterRegex.test(content)) {
+    content = content.replace(frontmatterRegex, '').trimStart();
+  }
+  return content;
+}
+
 function handleGet(skill) {
   if (!skill) {
     console.error('Error: You must provide a skill name.\nExample: stellarskills get soroban');
     process.exit(1);
   }
 
+  const availableSkills = getAvailableSkills();
+  if (!availableSkills.includes(skill)) {
+    console.error(`Error: Skill '${skill}' not found.`);
+    console.log('Run `stellarskills list` to see available skills.');
+    process.exit(1);
+  }
+
   const skillPath = getSkillPath(skill);
   if (fs.existsSync(skillPath)) {
-    const content = fs.readFileSync(skillPath, 'utf-8');
+    const content = readSkillContent(skillPath);
     console.log(content);
   } else {
     console.error(`Error: Skill '${skill}' not found.`);
@@ -139,7 +156,7 @@ function handleCombine(requestedSkills) {
   const contents = requestedSkills.map(skill => {
     const skillPath = getSkillPath(skill);
     try {
-      return fs.readFileSync(skillPath, 'utf-8');
+      return readSkillContent(skillPath);
     } catch (e) {
       console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
       process.exit(1);
@@ -168,7 +185,7 @@ function handleCopy(requestedSkills) {
 
   const contents = requestedSkills.map(skill => {
     try {
-      return fs.readFileSync(getSkillPath(skill), 'utf-8');
+      return readSkillContent(getSkillPath(skill));
     } catch (e) {
       console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
       process.exit(1);
@@ -272,7 +289,7 @@ function handleRules(ide, requestedSkills) {
 
   const contents = requestedSkills.map(skill => {
     try {
-      return fs.readFileSync(getSkillPath(skill), 'utf-8');
+      return readSkillContent(getSkillPath(skill));
     } catch (e) {
       console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
       process.exit(1);
@@ -328,7 +345,7 @@ function handleDoctor() {
     { name: 'Rust Compiler', cmd: 'rustc --version', isRequired: true },
     { name: 'Cargo', cmd: 'cargo --version', isRequired: true },
     { name: 'Stellar CLI', cmd: 'stellar --version', isRequired: true },
-    { name: 'WASM Target (wasm32-unknown-unknown)', cmd: 'rustup target list | grep wasm32-unknown-unknown | grep installed', isRequired: true }
+    { name: 'WASM Target (wasm32-unknown-unknown)', cmd: 'rustup target list', isRequired: true, validator: (out) => out.includes('wasm32-unknown-unknown (installed)') }
   ];
 
   let allPassed = true;
@@ -338,13 +355,17 @@ function handleDoctor() {
       // Execute the command synchronously
       const output = execSync(check.cmd, { stdio: 'pipe', encoding: 'utf-8' }).trim();
 
-      // If output is empty (e.g. grep found nothing), treat as missing for the WASM check
-      if (!output) {
-        throw new Error('Target not found');
+      // If a custom validator exists, run it
+      if (check.validator && !check.validator(output)) {
+        throw new Error('Validation failed');
       }
 
-      // Keep output concise (first line only)
-      const shortOutput = output.split('\n')[0];
+      // Keep output concise (first line only unless validator is used)
+      let shortOutput = output.split('\n')[0];
+      if (check.validator) {
+          shortOutput = 'installed';
+      }
+
       console.log(`✅ [Installed] ${check.name}: ${shortOutput}`);
     } catch (error) {
       console.log(`❌ [Missing]   ${check.name}`);
@@ -397,7 +418,7 @@ function handleSystem(argsArray) {
 
   const contents = requestedSkills.map(skill => {
     try {
-      return fs.readFileSync(getSkillPath(skill), 'utf-8');
+      return readSkillContent(getSkillPath(skill));
     } catch (e) {
       console.error(`Error: Could not read file for skill '${skill}': ${e.message}`);
       process.exit(1);

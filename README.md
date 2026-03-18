@@ -79,6 +79,25 @@ Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that
 
 ---
 
+## 🔌 Agent Marketplace Plugins
+
+Stellarskills is natively structured to be installed as a dynamic skill in various AI agent ecosystems.
+
+**For Claude Code:**
+Teach your Claude Code agent to use the Stellarskills CLI automatically by installing our repository plugin:
+```bash
+claude plugin install https://github.com/ggoldani/stellarskills
+```
+
+**For OpenClaw / ClawHub:**
+Every skill directory in this repository is a valid, independently installable AgentSkill. You can install the entire knowledge base into your OpenClaw agent by running:
+```bash
+clawhub install stellarskills
+```
+*(Or install granular skills: `clawhub install stellarskills-soroban`)*
+
+---
+
 ## 📚 The Skill Index
 
 | Skill Domain | URL | Description |
@@ -86,19 +105,22 @@ Works seamlessly in Cursor, Copilot, Cline, Devin, or any agentic framework that
 | **Root Index** | `raw.githubusercontent.com/ggoldani/stellarskills/main/SKILL.md` | Start here. The mental models and full index. |
 | **Accounts** | `raw.githubusercontent.com/ggoldani/stellarskills/main/accounts/SKILL.md` | Keypairs, minimum balances, multisig, sponsorship. |
 | **Assets** | `raw.githubusercontent.com/ggoldani/stellarskills/main/assets/SKILL.md` | Custom tokens, trustlines, SAC, USDC. |
-| **Soroban** | `raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md` | Smart contracts (Rust/WASM), storage, auth. |
+| **Soroban** | `raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md` | Smart contracts (Rust/WASM), general architecture, auth. |
+| **Storage** | `raw.githubusercontent.com/ggoldani/stellarskills/main/storage/SKILL.md` | Persistent/Temporary storage, TTL rent, data structures. |
 | **SEPs** | `raw.githubusercontent.com/ggoldani/stellarskills/main/seps/SKILL.md` | Interoperability standards (SEP-10, 24, 31, etc.). |
 | **Horizon API** | `raw.githubusercontent.com/ggoldani/stellarskills/main/horizon/SKILL.md` | REST API for the classic protocol. |
-| **Soroban RPC** | `raw.githubusercontent.com/ggoldani/stellarskills/main/rpc/SKILL.md` | JSON-RPC for smart contract simulation/invocation. |
+| **Soroban RPC** | `raw.githubusercontent.com/ggoldani/stellarskills/main/rpc/SKILL.md` | JSON-RPC for smart contracts and fetching historical events. |
 | **Fees** | `raw.githubusercontent.com/ggoldani/stellarskills/main/fees/SKILL.md` | Base fees, resource limits, and fee bumps. |
 | **DEX & AMM** | `raw.githubusercontent.com/ggoldani/stellarskills/main/dex/SKILL.md` | Built-in order books and liquidity pools. |
 | **Operations** | `raw.githubusercontent.com/ggoldani/stellarskills/main/operations/SKILL.md` | Reference for all transaction operations. |
 | **Anchors** | `raw.githubusercontent.com/ggoldani/stellarskills/main/anchors/SKILL.md` | Fiat on/off-ramps and integration flows. |
 | **Tools** | `raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md` | SDKs, CLI, wallets, and explorers. |
 | **Security** | `raw.githubusercontent.com/ggoldani/stellarskills/main/security/SKILL.md` | Soroban security patterns and reentrancy. |
+| **Local Node** | `raw.githubusercontent.com/ggoldani/stellarskills/main/local-node/SKILL.md` | Stellar Quickstart Docker, local RPC, and Friendbot. |
 | **Testing** | `raw.githubusercontent.com/ggoldani/stellarskills/main/testing/SKILL.md` | Rust unit testing and testnet deployment. |
-| **Frontend** | `raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md` | Connecting Freighter and WalletConnect. |
+| **Frontend** | `raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md` | Stellar Wallets Kit, SEP-10 Auth, and transaction building. |
 | **OpenZeppelin** | `raw.githubusercontent.com/ggoldani/stellarskills/main/openzeppelin/SKILL.md` | Audited contracts, SDKs, and Contract Wizard. |
+| **x402** | `raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md` | Pay-per-request HTTP 402 integration for AI Agents. |
 | **Why Stellar?** | `raw.githubusercontent.com/ggoldani/stellarskills/main/why/SKILL.md` | Architectural tradeoffs vs EVM/Solana. |
 
 ---

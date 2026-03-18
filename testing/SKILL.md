@@ -1,3 +1,8 @@
+---
+name: stellarskills-testing
+description: Testing Soroban contracts, Stellar CLI, testnet
+---
+
 # STELLARSKILLS — Testing
 
 > How to test Soroban smart contracts using Rust's built-in testing framework and the Stellar CLI.

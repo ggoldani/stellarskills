@@ -1,0 +1,15 @@
+{
+  "name": "stellarskills",
+  "version": "1.0.0",
+  "description": "The missing knowledge between AI agents and production Stellar Network applications.",
+  "author": {
+    "name": "Gustavo Goldani"
+  },
+  "skills": [
+    {
+      "name": "stellar-expert",
+      "description": "Provides expert knowledge and rules for building applications on the Stellar Network using the stellarskills CLI.",
+      "path": "skills/stellar-expert.md"
+    }
+  ]
+}

@@ -1,3 +1,8 @@
+---
+name: stellarskills-rpc
+description: Soroban RPC — simulate, send, getLedger, getTransaction
+---
+
 # STELLARSKILLS — Soroban RPC
 
 > Soroban's JSON-RPC API for smart contracts. Simulation, invocation, fetching ledger state, and getting events.
@@ -178,7 +183,12 @@ response.events.forEach(event => {
 });
 ```
 
-**Note**: Providers often restrict the `startLedger` window (e.g. only the last 7 days of events) to save storage.
+**Note**: RPC Providers often restrict the `startLedger` window (e.g. only keeping the last 7 days of events) to save storage.
+
+### Using an Indexer (The Graph Equivalents)
+If you need to query historical events beyond the RPC's short retention window, or if you need to build complex aggregated views of contract state, you cannot rely on the RPC alone. You must use a dedicated **indexer**.
+
+In the Stellar ecosystem, the standard indexers are **Mercury** and **Zephyr** (which compile WebAssembly indexing scripts). These act as the equivalents to The Graph or Envio in the EVM ecosystem.
 
 ---
 
