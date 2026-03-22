@@ -39,10 +39,12 @@ cd my_contract
 crate-type = ["cdylib"]
 
 [dependencies]
-soroban-sdk = { version = "21.0.0", features = ["alloc"] }
+# Pin to the soroban-sdk release that matches your Protocol / `stellar contract build` toolchain.
+# Latest on docs.rs is often ahead of testnet — verify: https://docs.rs/soroban-sdk/latest/soroban_sdk/
+soroban-sdk = { version = "25.3.0", features = ["alloc"] }
 
 [dev-dependencies]
-soroban-sdk = { version = "21.0.0", features = ["testutils", "alloc"] }
+soroban-sdk = { version = "25.3.0", features = ["testutils", "alloc"] }
 ```
 
 ---
@@ -145,7 +147,7 @@ env.events().publish(
 );
 ```
 
-Events are indexed by topic and can be queried via Soroban RPC (`getEvents`). Use `symbol_short!` for single-word topics (up to 9 chars).
+Events are indexed by topic and can be queried via **Stellar RPC** (`getEvents`). Use `symbol_short!` for single-word topics (up to 9 chars).
 
 ---
 
@@ -185,34 +187,37 @@ let usdc_client = token::Client::new(&env, &usdc_contract_id);
 let balance = usdc_client.balance(&user);
 ```
 
-Get contract IDs via JS SDK:
+Get contract IDs via JS SDK (Circle USDC issuers — verify: https://developers.circle.com/stablecoins/usdc-contract-addresses):
 ```javascript
 import { Asset, Networks } from "@stellar/stellar-sdk";
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
 const xlmContractId = Asset.native().contractId(Networks.MAINNET);
-const usdcContractId = new Asset("USDC", USDC_ISSUER).contractId(Networks.MAINNET);
+const usdcMainnet = new Asset("USDC", USDC_ISSUER_MAINNET).contractId(Networks.MAINNET);
+const usdcTestnet = new Asset("USDC", USDC_ISSUER_TESTNET).contractId(Networks.TESTNET);
 ```
 
 ---
 
-## Resource Limits & Budget
+## Resource limits, fees, and metering
 
-Every Soroban invocation has a resource budget. Exceeding it causes the transaction to fail.
+Every Soroban transaction must stay within **validator-voted** per-transaction limits (CPU instructions, ledger entry reads/writes, I/O bytes, transaction size, events/return value size, etc.) and pay **resource + inclusion** fees. Limits and fee **rates change** — never hardcode production caps from a blog or old tutorial.
 
-Key limits (approximate, subject to change):
-- **CPU instructions**: ~100M per transaction
-- **Memory**: ~40MB
-- **Ledger entries read**: 40 per transaction
-- **Ledger entries write**: 25 per transaction
-- **Events**: 8KB total
+**Official sources (use these, not static numbers in this skill):**
+
+- [Fees, resource limits, and metering](https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering) — inclusion vs resource fee, surge pricing, smart contract vs classic competition  
+- [Resource Limits & Fees](https://developers.stellar.org/docs/networks/resource-limits-fees) — how to read current values (**Stellar Lab**, `stellar network settings`)  
+- [Stellar Lab — Network limits](https://lab.stellar.org/network-limits) — live tables for Testnet / Mainnet / Futurenet  
+- Canonical fee implementation (protocol): [rs-soroban-env fees.rs](https://github.com/stellar/rs-soroban-env/blob/main/soroban-env-host/src/fees.rs) (linked from the official fees doc)
 
 ### Check resource usage during simulation
 ```javascript
 const sim = await sorobanRpc.simulateTransaction(tx);
-console.log(sim.cost); // { cpuInsns, memBytes }
+console.log(sim.cost); // e.g. cpuInsns, memBytes — shape depends on SDK version
 console.log(sim.minResourceFee);
 ```
 
-If simulation fails with resource errors, optimize your contract (reduce storage reads, avoid large data in events).
+If simulation fails with resource errors, optimize your contract (fewer storage reads/writes, smaller events) or adjust declared budgets per official guidance.
 
 ---
 
@@ -243,8 +248,8 @@ stellar contract deploy \
 ```
 
 ```javascript
-// Deploy via JS SDK
-import { SorobanRpc, TransactionBuilder } from "@stellar/stellar-sdk";
+// Deploy via JS SDK — use an RPC URL from https://developers.stellar.org/docs/data/apis/rpc/providers (SDF testnet host shown for quick dev only)
+import { SorobanRpc, TransactionBuilder, Operation, Networks, Keypair } from "@stellar/stellar-sdk";
 
 const server = new SorobanRpc.Server("https://soroban-testnet.stellar.org");
 const account = await server.getAccount(sourcePublicKey);
@@ -275,8 +280,8 @@ stellar contract invoke \
 ```
 
 ```javascript
-// Via JS SDK
-import { Contract, SorobanRpc } from "@stellar/stellar-sdk";
+// Via JS SDK (Stellar RPC) — RPC URL: see https://developers.stellar.org/docs/data/apis/rpc/providers
+import { Contract, SorobanRpc, TransactionBuilder, Networks, nativeToScVal } from "@stellar/stellar-sdk";
 
 const server = new SorobanRpc.Server("https://soroban-testnet.stellar.org");
 const contract = new Contract(contractId);
@@ -292,7 +297,7 @@ const tx = new TransactionBuilder(account, { fee: "1000000", networkPassphrase: 
 const sim = await server.simulateTransaction(tx);
 if (SorobanRpc.Api.isSimulationError(sim)) throw new Error(sim.error);
 
-const preparedTx = assembleTransaction(tx, sim);
+const preparedTx = SorobanRpc.assembleTransaction(tx, sim);
 preparedTx.sign(keypair);
 const sendResult = await server.sendTransaction(preparedTx);
 ```
@@ -337,6 +342,19 @@ let new_balance = balance.checked_add(amount).expect("overflow");
 | `storage_not_live` | Accessing expired entry | Extend TTL before reading |
 | `invoke_error: value missing` | Storage key not set | Use `.unwrap_or()` or check `.has()` first |
 | Simulation succeeds, submission fails | State changed between sim and submit | Re-simulate with latest ledger |
+
+---
+
+## Official documentation
+
+- Soroban overview: https://developers.stellar.org/docs/build/smart-contracts/overview  
+- Storing data / storage concepts: https://developers.stellar.org/docs/build/smart-contracts/getting-started/storing-data  
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
+- Network resource limits & fees: https://developers.stellar.org/docs/networks/resource-limits-fees  
+- Stellar Lab network limits: https://lab.stellar.org/network-limits  
+- Fees & metering: https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering  
+- soroban-sdk (Rust): https://docs.rs/soroban-sdk/latest/soroban_sdk/  
 
 ---
 

@@ -1,25 +1,25 @@
 ---
 name: stellarskills-rpc
-description: Soroban's JSON-RPC API for smart contracts. Simulation, invocation, fetching ledger state, and getting events.
+description: Stellar RPC (JSON-RPC) for Soroban smart contracts — simulation, invocation, ledger state, events. Official successor naming for Soroban RPC.
 ---
 
-# STELLARSKILLS — Soroban RPC
+# STELLARSKILLS — Stellar RPC
 
-> Soroban's JSON-RPC API for smart contracts. Simulation, invocation, fetching ledger state, and getting events.
+> **Stellar RPC** is the supported JSON-RPC API for the Stellar network’s smart-contract layer (Soroban). It was previously referred to as “Soroban RPC”; tooling may still expose `SorobanRpc` in the JS SDK. Official docs: https://developers.stellar.org/docs/data/apis/rpc
 
 ---
 
-## What is Soroban RPC?
+## What is Stellar RPC?
 
-Soroban RPC is the gateway to **Stellar smart contracts**. It is entirely separate from Horizon.
+Stellar RPC is the gateway to **Stellar smart contracts (Soroban)**. It is separate from **Horizon** (REST). Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations; see [migration from Horizon to RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc).
 
-| Horizon | Soroban RPC |
-|---------|-------------|
+| Horizon (REST, legacy) | Stellar RPC (JSON-RPC) |
+|------------------------|-------------------------|
 | Classic protocol (payments, offers, trustlines) | Smart contracts (Rust/WASM) |
 | REST API | JSON-RPC 2.0 |
-| `https://horizon.stellar.org` | Provider specific (e.g. `https://mainnet.stellar.validationcloud.io/...`) |
+| `https://horizon.stellar.org` | Provider-specific JSON-RPC URL — see [Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers) |
 
-**Use Soroban RPC when you need to:**
+**Use Stellar RPC when you need to:**
 - Simulate a smart contract call
 - Submit a smart contract transaction (`InvokeHostFunction` operation)
 - Fetch contract state (storage)
@@ -30,19 +30,22 @@ Soroban RPC is the gateway to **Stellar smart contracts**. It is entirely separa
 
 ## Endpoints
 
-| Network | URL | Note |
-|---------|-----|------|
-| Mainnet | Various Providers | No official SDF public RPC for mainnet production yet. Use a provider like Validation Cloud, Blockdaemon, or run your own. |
-| Testnet | `https://soroban-testnet.stellar.org` | Free, rate-limited by SDF. Resets quarterly. |
-| Futurenet| `https://rpc-futurenet.stellar.org` | For testing new protocol features before testnet. |
+**Official source of RPC URLs:** pick Testnet, Mainnet, or Futurenet from **[Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers)** (Blockdaemon, Validation Cloud, QuickNode, NowNodes, etc.).
+
+| Network | Typical approach | Notes |
+|---------|------------------|--------|
+| **Mainnet** | URL from a **provider** | Required for reliable production traffic; no single mandatory public URL. |
+| **Testnet** | Provider **or** SDF public host | SDF operates `https://soroban-testnet.stellar.org` for **development** (rate-limited); prefer a provider for CI/production-like tests. |
+| **Futurenet** | Provider **or** `https://rpc-futurenet.stellar.org` | Preview features before they reach testnet. |
 
 ---
 
 ## Setup JS SDK
 
 ```javascript
-import { SorobanRpc, Networks, Keypair, TransactionBuilder, Contract, BASE_FEE } from "@stellar/stellar-sdk";
+import { SorobanRpc, Networks, Keypair, TransactionBuilder, Contract, BASE_FEE, nativeToScVal } from "@stellar/stellar-sdk";
 
+// Replace with your chosen RPC URL from https://developers.stellar.org/docs/data/apis/rpc/providers
 const server = new SorobanRpc.Server("https://soroban-testnet.stellar.org");
 ```
 
@@ -216,6 +219,15 @@ In the Stellar ecosystem, the standard indexers are **Mercury** and **Zephyr** (
 | `tx_bad_seq` | Sequence number used or stale | Re-fetch account sequence |
 | `tx_insufficient_fee` | Resource fee bumped during surge | Use `getFeeStats` and increase fee |
 | `auth_not_authorized` | Invoker didn't sign the auth payload | Ensure `require_auth` logic matches signers |
+
+---
+
+## Official documentation
+
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- RPC methods (example: `simulateTransaction`): https://developers.stellar.org/docs/data/apis/rpc/api-reference/methods/simulateTransaction  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
+- Network resource limits & fees: https://developers.stellar.org/docs/networks/resource-limits-fees  
 
 ---
 

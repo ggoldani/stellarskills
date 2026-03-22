@@ -1,11 +1,11 @@
 ---
 name: stellarskills-fees
-description: Stellar transaction fees, base fee, surge pricing, resource fees (Soroban), and fee bumps.
+description: Stellar transaction fees, base fee, surge pricing, Soroban resource fees, and fee bumps.
 ---
 
 # STELLARSKILLS — Fees
 
-> Stellar transaction fees, base fee, surge pricing, resource fees (Soroban), and fee bumps.
+> Stellar transaction fees, base fee, surge pricing, resource fees (Soroban / Stellar RPC), and fee bumps.
 
 ---
 
@@ -44,15 +44,23 @@ const tx = new TransactionBuilder(account, {
 });
 ```
 
-### Surge Pricing (Fee Market)
-If the network is congested (more than 1000 operations per ledger), surge pricing activates. Transactions with higher base fees are prioritized.
+### Surge pricing (official behavior)
 
-**Crucial detail**: You only pay the *lowest* fee required to make it into the ledger, up to your specified maximum. If you set your fee to 10,000 stroops, but the clearing price is 500 stroops, you only pay 500.
+Per [Fees, resource limits, and metering](https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering): if traffic is **below** the per-ledger capacity (**currently** up to **1,000 operations** for transactions that **do not** execute smart contracts, and separate limits for **smart contract** transactions), you typically pay only the **network minimum** inclusion fee (currently **100 stroops** per operation unless validators change it). If traffic **exceeds** capacity, the network enters **surge pricing**: transactions sort by inclusion fee bid; you pay the **minimum** fee among those included in the set, not necessarily your max bid.
+
+Smart contract transactions compete on **multiple resources** (instructions, ledger entry accesses, I/O, etc.) and hit surge **more often** than classic traffic — plan fee bids accordingly.
+
+**Crucial detail:** Your transaction `fee` field is a **maximum** bid; you are charged the **effective** inclusion fee needed to clear the ledger, up to that cap (see official doc above).
+
+Current limits and fee rates are easiest to inspect live in **[Stellar Lab → Network limits](https://lab.stellar.org/network-limits)** (linked from the same doc).
 
 ### Dynamic Fee Estimation
 Always fetch current fee stats before building a transaction in production to avoid stalled transactions:
 
 ```javascript
+import { Horizon, TransactionBuilder } from "@stellar/stellar-sdk";
+// Horizon is deprecated for new integrations — see https://developers.stellar.org/docs/data/apis/horizon
+// On-chain fee stats for new systems: use Stellar RPC / providers — https://developers.stellar.org/docs/data/apis/rpc/providers
 const server = new Horizon.Server("https://horizon.stellar.org");
 const feeStats = await server.feeStats();
 
@@ -78,21 +86,37 @@ Soroban smart contracts charge for the exact resources they consume:
 5. Events emitted
 
 ### How to calculate
-You never calculate this manually. You must use `simulateTransaction` on the Soroban RPC.
+You never calculate this manually. You must use `simulateTransaction` on **Stellar RPC** (JSON-RPC; JS: `SorobanRpc.Server`). See also `/rpc/SKILL.md` for the full submit/poll flow.
 
 ```javascript
-// 1. Build raw tx with a placeholder fee
-const tx = new TransactionBuilder(account, { fee: "100" })
-  .addOperation(contract.call("my_func"))
+import {
+  SorobanRpc,
+  TransactionBuilder,
+  Contract,
+  Networks,
+  BASE_FEE,
+  nativeToScVal,
+} from "@stellar/stellar-sdk";
+
+// RPC URL: https://developers.stellar.org/docs/data/apis/rpc/providers
+const sorobanServer = new SorobanRpc.Server("https://soroban-testnet.stellar.org");
+const contract = new Contract(contractId);
+
+const tx = new TransactionBuilder(account, {
+  fee: BASE_FEE,
+  networkPassphrase: Networks.TESTNET,
+})
+  .addOperation(
+    contract.call("my_func", nativeToScVal(arg, { type: "..." })) // match arg types to your contract
+  )
+  .setTimeout(30)
   .build();
 
-// 2. Simulate
 const sim = await sorobanServer.simulateTransaction(tx);
+if (SorobanRpc.Api.isSimulationError(sim)) throw new Error(String(sim.error));
 
-// 3. Assemble (applies footprint and calculated resource fee)
 const preparedTx = SorobanRpc.assembleTransaction(tx, sim);
-
-// preparedTx now has the correct fee and resources attached
+// preparedTx has footprint + resource fee from simulation — sign and sendTransaction next
 ```
 
 ### Extending Soroban Budgets
@@ -143,6 +167,16 @@ await server.submitTransaction(feeBump);
 | `tx_insufficient_fee` | The network is surging and your fee is too low | Fetch `feeStats` and submit with higher fee, or use Fee Bump |
 | `op_underfunded` | Account doesn't have enough XLM to cover fee + min balance | Add more XLM. Remember minimum balance requirements! |
 | Soroban simulation `wasm_vm_error` | Contract exceeded resource budget (often CPU) | Optimize contract logic or reduce storage reads/writes |
+
+---
+
+## Official documentation
+
+- Fees & resource metering (fundamentals): https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering  
+- Network resource limits & fees (entry point; often defers to Lab / CLI): https://developers.stellar.org/docs/networks/resource-limits-fees  
+- Live limits in **Stellar Lab**: https://lab.stellar.org/network-limits  
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
 
 ---
 

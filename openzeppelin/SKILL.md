@@ -7,6 +7,8 @@ description: OpenZeppelin's audited smart contracts, Contract Wizard, and develo
 
 > OpenZeppelin's audited smart contracts, Contract Wizard, and developer toolings for Stellar's Soroban (Rust) environment.
 
+**Maintenance note:** Module names, wizard options, and repo layout change over time. Always confirm capabilities against [OpenZeppelin Stellar contracts docs](https://docs.openzeppelin.com/stellar-contracts), the [Contract Wizard](https://wizard.openzeppelin.com/stellar), and the [stellar-contracts](https://github.com/OpenZeppelin/stellar-contracts) repository before generating production code.
+
 ---
 
 ## 1. What is OpenZeppelin on Stellar?
@@ -70,6 +72,13 @@ In addition to contracts, OpenZeppelin provides infrastructure tools specificall
 | **Role Manager**| Access control UI. Visualize roles and execute admin actions. | `github.com/OpenZeppelin/role-manager` |
 | **Security Detector SDK**| Static analysis scanner to catch common Soroban pitfalls before mainnet deployment. | `github.com/OpenZeppelin/soroban-security-detectors-sdk` |
 | **MCP Server** | Generate secure Stellar smart contracts via Model Context Protocol templates. | `mcp.openzeppelin.com` |
+
+---
+
+## Official Stellar context
+
+- Stellar developer tools hub: https://developers.stellar.org/docs/tools  
+- Soroban overview: https://developers.stellar.org/docs/build/smart-contracts/overview  
 
 ---
 

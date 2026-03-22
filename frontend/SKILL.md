@@ -53,9 +53,13 @@ await kit.openModal({
 Once connected, you can sign XDR transactions agnostically. The kit handles the extension pop-up whether the user is on Freighter or Albedo.
 
 ```javascript
-import { TransactionBuilder, Networks, BASE_FEE, Operation } from "@stellar/stellar-sdk";
+import { TransactionBuilder, Networks, BASE_FEE, Operation, Asset, Horizon } from "@stellar/stellar-sdk";
 
-// 1. Build the transaction (Requires fetching account sequence from Horizon)
+// 1. Build the transaction — load sequence via Horizon (legacy) or Stellar RPC (`getAccount` on SorobanRpc.Server)
+// Horizon: https://developers.stellar.org/docs/data/apis/horizon (deprecated for new integrations)
+const horizonServer = new Horizon.Server("https://horizon-testnet.stellar.org");
+const account = await horizonServer.loadAccount(userPublicKey);
+
 const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
   .addOperation(Operation.payment({ destination: "GBB...", asset: Asset.native(), amount: "10" }))
   .setTimeout(30)
@@ -68,7 +72,7 @@ const { signedXDR } = await kit.signTx({
   network: WalletNetwork.TESTNET
 });
 
-// 3. Reconstruct and submit to Horizon/RPC
+// 3. Reconstruct and submit (Horizon example below; prefer aligning new apps with Stellar RPC migration)
 const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET);
 await horizonServer.submitTransaction(signedTx);
 ```
@@ -97,19 +101,25 @@ const signedTxXdr = await signTransaction(tx.toXDR(), { network: "TESTNET" });
 
 ---
 
-## 4. Signing Transactions (Soroban Smart Contracts)
+## 4. Signing Transactions (Soroban / Stellar RPC)
 
-When calling a Soroban smart contract, you cannot simply sign the operation. You must **simulate** the transaction first to fetch the correct resource footprint and fee, assemble it, and *then* request the user's signature.
+When calling a Soroban smart contract, you cannot simply sign the operation. You must **simulate** the transaction first to fetch the correct resource footprint and fee, assemble it, and *then* request the user's signature. Use **Stellar RPC** (`SorobanRpc.Server` in JS). Docs: https://developers.stellar.org/docs/data/apis/rpc
 
 ```javascript
-import { TransactionBuilder, Networks, BASE_FEE, Contract } from "@stellar/stellar-sdk";
+import { TransactionBuilder, Networks, BASE_FEE, Contract, nativeToScVal } from "@stellar/stellar-sdk";
 import { SorobanRpc } from "@stellar/stellar-sdk";
 
 const contract = new Contract(contractId);
 
-// 1. Build initial tx with default limits
+// 1. Build initial tx with placeholder fee; encode args with nativeToScVal (types must match your contract)
 let tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
-  .addOperation(contract.call("deposit", ...))
+  .addOperation(
+    contract.call(
+      "deposit",
+      nativeToScVal(amount, { type: "i128" }),
+      nativeToScVal(userAddress, { type: "address" })
+    )
+  )
   .setTimeout(30)
   .build();
 
@@ -127,6 +137,16 @@ const { signedXDR } = await kit.signTx({ xdr: tx.toXDR(), publicKeys: [userPubli
 const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET);
 const sendResponse = await rpcServer.sendTransaction(signedTx);
 ```
+
+---
+
+## Official documentation
+
+- Stellar docs: https://developers.stellar.org/docs  
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
+- Smart contracts overview: https://developers.stellar.org/docs/build/smart-contracts/overview  
+- JS SDK releases: https://github.com/stellar/js-stellar-sdk/releases (verify current tag, e.g. **v14.6.1**)  
 
 ---
 

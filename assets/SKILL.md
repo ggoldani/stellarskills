@@ -23,28 +23,44 @@ All non-native assets are identified by **code + issuer**:
 ```javascript
 import { Asset } from "@stellar/stellar-sdk";
 
+// Circle USDC — verify anytime: https://developers.circle.com/stablecoins/usdc-contract-addresses
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+
 const XLM = Asset.native();
-const USDC = new Asset("USDC", "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN");
+const USDC_MAINNET = new Asset("USDC", USDC_ISSUER_MAINNET);
+const USDC_TESTNET = new Asset("USDC", USDC_ISSUER_TESTNET);
+// Example BRL on mainnet (historical issuer — verify issuer + anchor are still active before use)
 const BRL  = new Asset("BRL",  "GDVKY2GU2DRXWTBEYJJWSFXIGBZV6AZNBVVSUHEPZI54LIS6BA7DVVSP");
 ```
 
-**Two assets with the same code but different issuers are DIFFERENT assets.** Always verify the issuer address. Do not trust an asset code alone.
+**Two assets with the same code but different issuers are DIFFERENT assets.** Always verify the issuer address. Do not trust an asset code alone. **Fiat-backed / anchor assets:** corridors and issuers **change or sunset** — confirm `stellar.toml`, the anchor’s docs, and an explorer **at integration time**; never treat table rows as permanent.
 
 ---
 
-## Canonical Stablecoins (Mainnet)
+## Canonical stablecoins (verify before production)
 
-| Asset | Issuer |
-|-------|--------|
-| USDC (Circle) | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+**USDC (Circle)** — official list: https://developers.circle.com/stablecoins/usdc-contract-addresses
+
+| Network | Asset | Issuer |
+|---------|-------|--------|
+| **Public mainnet** | USDC | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+| **Testnet** | USDC | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+
+**Other mainnet examples** (confirm with issuer / explorer):
+
+| Asset | Issuer (mainnet) |
+|-------|------------------|
 | EURC (Circle) | `GDHU6WRG4IEQXM5NZ4BMPKOXHW76MZM4Y2IEMFDVXBSDP6SJY4ITNPP` |
 | USDT (Tether) | `GCQTGZQQ5G4PTM2GL7CDIFKUBIPEC52BROAQIAPW53XBRJVN6ZJVTG6V` |
 
-Always verify issuer addresses against the official source (issuer's website, stellar.expert) before using in production. Do not hardcode from memory.
+**Official Stellar docs:** https://developers.stellar.org/docs — tokens / assets sections for SAC and anatomy of an asset.
 
 ---
 
 ## Trustlines
+
+> Examples below use **Horizon** (`Horizon.Server`) for sequence load and submit. Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations — use [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) + [migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) for new work.
 
 **Before an account can receive any non-native asset, it must have a trustline to that asset.**
 
@@ -52,14 +68,16 @@ A trustline is a subentry (costs 0.5 XLM in minimum balance reserve) that says "
 
 ### Create a trustline (changeTrust)
 ```javascript
-import { TransactionBuilder, Networks, Operation, Asset, BASE_FEE } from "@stellar/stellar-sdk";
+import { TransactionBuilder, Networks, Operation, Asset, BASE_FEE, Keypair } from "@stellar/stellar-sdk";
 import { Horizon } from "@stellar/stellar-sdk";
+
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 
 const server = new Horizon.Server("https://horizon.stellar.org");
 const keypair = Keypair.fromSecret(process.env.SECRET);
 const account = await server.loadAccount(keypair.publicKey());
 
-const USDC = new Asset("USDC", "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN");
+const USDC = new Asset("USDC", USDC_ISSUER_MAINNET);
 
 const tx = new TransactionBuilder(account, {
   fee: BASE_FEE,
@@ -84,8 +102,9 @@ Set `limit: "0"` — but only when balance is zero.
 ### Check if trustline exists
 ```javascript
 const account = await server.loadAccount(publicKey);
+const issuer = USDC_ISSUER_MAINNET; // or USDC_ISSUER_TESTNET on testnet
 const hasTrustline = account.balances.some(
-  b => b.asset_code === "USDC" && b.asset_issuer === USDC_ISSUER
+  b => b.asset_code === "USDC" && b.asset_issuer === issuer
 );
 ```
 
@@ -197,8 +216,8 @@ Every Stellar asset automatically has a **Soroban-compatible contract** called t
 ```javascript
 import { Contract, Networks } from "@stellar/stellar-sdk";
 
-const usdcSAC = new Asset("USDC", "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN")
-  .contractId(Networks.MAINNET);
+const usdcSAC = new Asset("USDC", USDC_ISSUER_MAINNET).contractId(Networks.MAINNET);
+// Testnet: new Asset("USDC", USDC_ISSUER_TESTNET).contractId(Networks.TESTNET)
 
 console.log(usdcSAC);  // C... contract address
 ```
@@ -284,6 +303,16 @@ Operation.pathPaymentStrictSend({
 | `op_line_full` | Would exceed trustline limit | Increase limit via changeTrust |
 | `op_low_reserve` | Not enough XLM for trustline reserve | Add 0.5 XLM per trustline |
 | `op_self_not_allowed` | Sending to self | Use a different destination |
+
+---
+
+## Official documentation
+
+- Stellar docs: https://developers.stellar.org/docs  
+- Assets (data structures): https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/assets  
+- Stellar Asset Contract: https://developers.stellar.org/docs/tokens/stellar-asset-contract  
+- Circle USDC addresses (mainnet + testnet issuers): https://developers.circle.com/stablecoins/usdc-contract-addresses  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
 
 ---
 

@@ -1,20 +1,20 @@
 ---
 name: stellarskills-horizon
-description: Stellar's REST API for accounts, transactions, operations, effects, order books, streaming. Not for Soroban — see /rpc/SKILL.md for smart contracts.
+description: Stellar's legacy REST API (Horizon) for classic protocol data. Deprecated for new integrations — prefer Stellar RPC; see /rpc/SKILL.md for smart contracts.
 ---
 
 # STELLARSKILLS — Horizon API
 
-> Stellar's REST API for accounts, transactions, operations, effects, order books, streaming. Not for Soroban — see /rpc/SKILL.md for smart contracts.
+> **Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon)** for new integrations. Prefer **Stellar RPC** for new projects and follow the **[migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc)**. This skill documents Horizon for maintaining existing systems that still rely on its REST API.
 
 ---
 
 ## What is Horizon?
 
-Horizon is the REST API gateway to the Stellar network. It serves the **classic protocol** — accounts, payments, offers, trustlines, and transaction submission. For **Soroban smart contracts**, use the Soroban RPC instead (see `/rpc/SKILL.md`).
+Horizon is the REST API gateway to the Stellar network. It serves the **classic protocol** — accounts, payments, offers, trustlines, and transaction submission. For **Soroban smart contracts**, use **Stellar RPC** (see `/rpc/SKILL.md`).
 
-| Horizon | Soroban RPC |
-|---------|-------------|
+| Horizon (REST) | Stellar RPC (JSON-RPC) |
+|----------------|-------------------------|
 | Accounts, payments, offers, assets | Smart contract simulation and invocation |
 | Historical transaction data | Contract state, ledger entries |
 | Stellar DEX order book | Events from contracts |
@@ -30,6 +30,15 @@ Horizon is the REST API gateway to the Stellar network. It serves the **classic 
 | Testnet | `https://horizon-testnet.stellar.org` |
 
 SDF runs these for free with rate limits. For production, use a dedicated Horizon instance or provider (Blockdaemon, Validation Cloud, etc.).
+
+---
+
+## Official documentation
+
+- Horizon (status & admin): https://developers.stellar.org/docs/data/apis/horizon  
+- Migrate Horizon → Stellar RPC: https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc  
+- Stellar RPC overview: https://developers.stellar.org/docs/data/apis/rpc  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
 
 ---
 
@@ -202,6 +211,15 @@ effects.records.forEach(e => {
 ---
 
 ## Assets
+
+Circle **USDC** issuers (verify anytime on [Circle USDC contract addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses)):
+
+```javascript
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+// Pick the issuer matching your Horizon endpoint (mainnet vs testnet).
+const USDC_ISSUER = USDC_ISSUER_MAINNET;
+```
 
 ### Find all accounts holding an asset
 ```javascript

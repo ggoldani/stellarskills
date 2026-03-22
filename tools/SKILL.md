@@ -11,7 +11,7 @@ description: The essential tools, SDKs, wallets, and explorers for building on S
 
 ## SDKs (Software Development Kits)
 
-SDF officially maintains or heavily supports these SDKs for interacting with Horizon and Soroban RPC.
+SDF officially maintains or heavily supports these SDKs for interacting with **Horizon** (legacy REST) and **Stellar RPC** (JSON-RPC for Soroban).
 
 | Language | Package | Purpose |
 |----------|---------|---------|
@@ -27,7 +27,9 @@ SDF officially maintains or heavily supports these SDKs for interacting with Hor
 The JS SDK is split conceptually but bundled together:
 - `Keypair`, `TransactionBuilder`, `Operation` (Core XDR building)
 - `Horizon.Server` (Classic protocol REST API)
-- `SorobanRpc.Server` (Smart contract JSON-RPC)
+- `SorobanRpc.Server` (Stellar / Soroban JSON-RPC client in JS)
+
+Check the current release: https://github.com/stellar/js-stellar-sdk/releases  
 
 ---
 
@@ -90,12 +92,19 @@ To test your dApp, you need a wallet that supports Soroban and WalletConnect.
 
 ## RPC & Horizon Providers
 
-You shouldn't use the SDF public endpoints (`horizon.stellar.org`) for heavy production traffic. Use a commercial provider:
+You shouldn't use the SDF public endpoints for heavy production traffic. Use an RPC URL from **[Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers)**.
 
-- **Validation Cloud** (RPC, Horizon)
-- **Blockdaemon** (RPC, Horizon)
-- **Tatum** (Horizon)
-- **QuickNode** (Horizon, RPC coming soon)
+Examples (non-exhaustive): **Validation Cloud**, **Blockdaemon**, **Tatum**, **QuickNode**.
+
+---
+
+## Official documentation
+
+- Stellar docs: https://developers.stellar.org/docs  
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
+- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
+- JS SDK releases: https://github.com/stellar/js-stellar-sdk/releases  
 
 ---
 
