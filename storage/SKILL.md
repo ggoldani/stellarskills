@@ -15,7 +15,7 @@ If you are migrating from EVM/Solidity to Stellar/Soroban, **do not use Rust's i
 
 In Solidity, you write: `mapping(address => uint256) public balances;`
 
-In Soroban, memory is strictly limited per invocation (~40MB). If you try to deserialize an entire `Vec` or `Map` of 10,000 users into memory just to update one balance, the transaction will crash with a **Memory Limit Exceeded** error.
+In Soroban, **memory (and CPU, I/O, etc.) are strictly capped per invocation** by validator-voted network limits — the exact numbers **change by protocol version**; do not trust a fixed megabyte figure from a blog. Use [Resource limits & fees](https://developers.stellar.org/docs/networks/resource-limits-fees) and [Stellar Lab → Network limits](https://lab.stellar.org/network-limits) as sources of truth. If you deserialize an entire `Vec` or `Map` of thousands of users into memory to update one balance, the transaction will hit **resource / memory limits** and fail.
 
 **The Solution:** You must interact directly with the Ledger State using **Host Storage** (`env.storage()`). The ledger itself *is* the mapping.
 
@@ -135,6 +135,13 @@ env.storage().persistent().extend_ttl(
 1. **Avoid `Vec` for state:** If you catch yourself writing `let mut users: Vec<Address> = env.storage().instance().get...`, stop. Use `persistent().set(&DataKey::User(addr))` instead. If you need to iterate over all users off-chain, emit an Event or use an Indexer (Mercury/Zephyr), do not iterate on-chain.
 2. **Delete what you don't need:** If a user withdraws all funds, `remove()` their key from `persistent()` storage. State bloat increases fees.
 3. **Always unwrap safely:** Never use `.unwrap()` on storage keys blindly. Always use `.unwrap_or(default_value)` or `if let Some(val) = ...`. An unhandled unwrap on a missing key will panic and crash the transaction.
+
+---
+
+## Official documentation
+
+- Storing data (Soroban): https://developers.stellar.org/docs/build/smart-contracts/getting-started/storing-data  
+- soroban-sdk storage API: https://docs.rs/soroban-sdk/latest/soroban_sdk/storage/struct.Persistent.html  
 
 ---
 

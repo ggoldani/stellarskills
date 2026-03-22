@@ -113,4 +113,14 @@ const tx = new TransactionBuilder(account, { fee: BASE_FEE })
 
 ---
 
+## Official documentation
+
+- Anchors (fundamentals): https://developers.stellar.org/docs/learn/fundamentals/anchors  
+- SEPs overview: https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals  
+- SEP specs (GitHub): https://github.com/stellar/stellar-protocol/tree/master/ecosystem  
+- Anchor testing tools: https://developers.stellar.org/docs/tools/developer-tools/anchor-tools  
+- Polaris (reference server): https://github.com/stellar/django-polaris  
+
+---
+
 *raw.githubusercontent.com/ggoldani/stellarskills/main/anchors — MIT License*

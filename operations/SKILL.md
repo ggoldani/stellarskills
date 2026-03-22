@@ -25,6 +25,14 @@ const tx = new TransactionBuilder(account, { fee: BASE_FEE })
   .build();
 ```
 
+### Circle USDC issuers (verify on [Circle’s list](https://developers.circle.com/stablecoins/usdc-contract-addresses))
+
+```javascript
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+const USDC_ISSUER = USDC_ISSUER_MAINNET; // use TESTNET constant on testnet
+```
+
 ---
 
 ## Core Operations
@@ -87,8 +95,8 @@ Operation.changeTrust({
 })
 ```
 
-### Allow Trust (Set Trustline Flags)
-Used by issuers to authorize/freeze a user's trustline.
+### Set trustline flags (replaces deprecated Allow Trust)
+Issuers use **`setTrustLineFlags`** (modern path). The legacy **`allowTrust`** operation still exists in the protocol for backward compatibility but new code should follow current SDK / [list of operations](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations).
 ```javascript
 Operation.setTrustLineFlags({
   trustor: "G_USER...",
@@ -229,31 +237,55 @@ Operation.endSponsoringFutureReserves({
 
 ---
 
-## Soroban Operations
+## Soroban-related operations (classic transaction envelope)
 
-### Invoke Host Function
-Calls a Soroban smart contract, uploads WASM, or deploys a contract.
+Protocol reference: [List of operations](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations) — **Invoke Host Function**, **Extend Footprint TTL**, **Restore Footprint**.
+
+### Invoke host function (typical dapp path)
+
+Prefer the high-level **contract** helper in `@stellar/stellar-sdk` (builds `InvokeHostFunction` with correct XDR):
+
 ```javascript
-// Built via `contract.call("func_name", args)`
-Operation.invokeHostFunction({
-  func: xdr.HostFunction.hostFunctionTypeInvokeContract(...),
-  auth: [], // Authorization entries
-})
+import { Contract, nativeToScVal } from "@stellar/stellar-sdk";
+
+const contract = new Contract(contractId);
+const op = contract.call("my_fn", nativeToScVal(arg, { type: "..." }));
+// Add to TransactionBuilder, then simulate on Stellar RPC before submit — see /rpc/SKILL.md
 ```
 
-### Extend Footprint TTL
-Extends the time-to-live for a contract's storage.
+Low-level `Operation.invokeHostFunction({ func, auth })` requires hand-built `xdr.HostFunction` and Soroban auth entries — use only when you are not using `Contract.call`. JS SDK reference: https://stellar.github.io/js-stellar-sdk/Operation.html
+
+### Extend footprint TTL
+
+Extends TTL for entries referenced in the transaction’s **read-only footprint** (see protocol doc: [Extend Footprint TTL](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations#extend-footprint-ttl)).
+
 ```javascript
+import { Operation } from "@stellar/stellar-sdk";
+
 Operation.extendFootprintTtl({
-  extendTo: 100000, // Ledgers
-})
+  extendTo: 1_000_000, // target ledger sequence (protocol field "extendTo") — must match your SDK version’s opts shape
+});
 ```
 
-### Restore Footprint
-Restores a contract's expired storage.
+Confirm exact option names in your SDK: https://stellar.github.io/js-stellar-sdk/Operation.html#.extendFootprintTtl
+
+### Restore footprint
+
+Restores **archived** entries in the **read-write** footprint — [Restore Footprint](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations#restore-footprint).
+
 ```javascript
-Operation.restoreFootprint({})
+import { Operation } from "@stellar/stellar-sdk";
+
+Operation.restoreFootprint({});
 ```
+
+---
+
+## Official documentation
+
+- List of operations: https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations  
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
 
 ---
 

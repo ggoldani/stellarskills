@@ -46,8 +46,8 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 ### Data & APIs
 | Task | Fetch |
 |------|-------|
-| Horizon REST API — accounts, transactions, effects, streaming | `raw.githubusercontent.com/ggoldani/stellarskills/main/horizon/SKILL.md` |
-| Soroban RPC — simulate, send, getLedger, getTransaction | `raw.githubusercontent.com/ggoldani/stellarskills/main/rpc/SKILL.md` |
+| Horizon REST API (legacy) — accounts, transactions, effects, streaming | `raw.githubusercontent.com/ggoldani/stellarskills/main/horizon/SKILL.md` |
+| Stellar RPC — simulate, send, getLatestLedger, getTransaction | `raw.githubusercontent.com/ggoldani/stellarskills/main/rpc/SKILL.md` |
 
 ### Smart Contracts
 | Task | Fetch |
@@ -67,6 +67,7 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 |------|-------|
 | SDKs, wallets, explorers, Stellar Lab, CLI | `raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md` |
 | Frontend integration — Freighter, SEP-10 auth, browser SDK | `raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md` |
+| x402 HTTP micropayments on Stellar (`@x402/stellar`, facilitator) | `raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md` |
 | OpenZeppelin audited contracts, SDKs, and Contract Wizard | `raw.githubusercontent.com/ggoldani/stellarskills/main/openzeppelin/SKILL.md` |
 
 ### Context
@@ -81,7 +82,7 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 ### Build a payment app
 1. Fetch `/accounts/SKILL.md` — understand account creation and minimum balance
 2. Fetch `/assets/SKILL.md` — understand trustlines if using non-XLM assets
-3. Fetch `/horizon/SKILL.md` — submit transactions and read state
+3. Fetch `/rpc/SKILL.md` — prefer **Stellar RPC** for new work; fetch `/horizon/SKILL.md` only if you must integrate with the legacy REST API (Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon); [migrate to RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc))
 4. Fetch `/seps/SKILL.md` — if connecting to fiat on/off-ramps
 
 ### Build a Soroban smart contract
@@ -111,11 +112,11 @@ A Stellar transaction can contain up to 100 operations. Either all succeed or al
 **4. Fees are predictable and tiny.**
 Base fee is 100 stroops (0.00001 XLM) per operation. Soroban fees are slightly higher but still sub-cent. Stellar is genuinely cheap — this is not marketing.
 
-**5. Horizon is not the only API.**
-Horizon serves the classic protocol. Soroban smart contract interactions use the **Soroban RPC** endpoint — different base URL, different methods.
+**5. Stellar RPC vs Horizon.**
+**Stellar RPC** (JSON-RPC) is the supported API for smart contracts and the direction of travel for on-chain data access. **Horizon** (REST) still serves the classic protocol but is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations — [migrate to Stellar RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) when possible.
 
 **6. Testnet resets periodically.**
-Stellar testnet (Horizon: `https://horizon-testnet.stellar.org`) resets quarterly. Do not store testnet state long-term. Futurenet is for bleeding-edge preview features.
+Stellar testnet resets periodically. Do not store testnet state long-term. Use [Horizon testnet](https://horizon-testnet.stellar.org) only for legacy REST; for **Stellar RPC**, choose an endpoint from [RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers) (or the SDF testnet RPC host for light dev). **Futurenet** is for bleeding-edge preview features.
 
 **7. Network passphrase is required for signing.**
 Every transaction must be signed with the correct network passphrase:
@@ -128,15 +129,42 @@ Every transaction must be signed with the correct network passphrase:
 
 | Resource | URL |
 |----------|-----|
-| Stellar Docs | https://developers.stellar.org |
-| Horizon Mainnet | https://horizon.stellar.org |
-| Horizon Testnet | https://horizon-testnet.stellar.org |
-| Soroban RPC Mainnet | https://mainnet.stellar.validationcloud.io/v1/... (varies by provider) |
-| Soroban RPC Testnet | https://soroban-testnet.stellar.org |
+| Stellar Docs (root) | https://developers.stellar.org/docs |
+| Stellar RPC (overview) | https://developers.stellar.org/docs/data/apis/rpc |
+| Horizon (deprecated) | https://developers.stellar.org/docs/data/apis/horizon |
+| Horizon → RPC migration | https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc |
+| Stellar RPC providers (Testnet / Mainnet / Futurenet) | https://developers.stellar.org/docs/data/apis/rpc/providers |
+| Network resource limits & fees | https://developers.stellar.org/docs/networks/resource-limits-fees |
+| Fees & metering (fundamentals) | https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering |
+| x402 on Stellar | https://developers.stellar.org/docs/build/apps/x402 |
+| Horizon Mainnet (legacy REST) | https://horizon.stellar.org |
+| Horizon Testnet (legacy REST) | https://horizon-testnet.stellar.org |
+| Stellar RPC (pick an endpoint) | Prefer a URL from [RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers) (Blockdaemon, Validation Cloud, QuickNode, etc.). SDF also exposes a public **testnet** JSON-RPC host (`https://soroban-testnet.stellar.org`) for development — not for production load. |
+| JavaScript SDK (check latest release) | https://github.com/stellar/js-stellar-sdk/releases (e.g. **v14.6.1** as of Mar 2026) |
 | Stellar Lab | https://lab.stellar.org |
 | Stellar Expert (Explorer) | https://stellar.expert |
+| Circle USDC contract addresses (incl. Stellar issuers) | https://developers.circle.com/stablecoins/usdc-contract-addresses |
 | GitHub stellar/js-stellar-sdk | https://github.com/stellar/js-stellar-sdk |
 | GitHub stellar/py-stellar-sdk | https://github.com/stellar/py-stellar-base |
+
+### USDC issuers (Circle — verify on [Circle’s list](https://developers.circle.com/stablecoins/usdc-contract-addresses))
+
+| Network | Issuer account (G…) |
+|---------|-------------------|
+| **Public mainnet** | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+| **Testnet** | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+
+---
+
+## Keeping skills correct as tooling & protocol evolve
+
+These files are **guides for agents**, not a substitute for the live docs. To stay accurate across SDK bumps and protocol votes:
+
+1. **Prefer links + “verify” over frozen numbers** — capacities, fees, basis points, and memory/CPU limits belong in [Resource limits & fees](https://developers.stellar.org/docs/networks/resource-limits-fees), [Stellar Lab](https://lab.stellar.org/network-limits), and the fees metering doc — not hardcoded in prose unless qualified as “current doc says” with a link.
+2. **Pin versions in examples, refresh deliberately** — When `Cargo.toml` or JS examples show a version, treat it as a **hint**: align `soroban-sdk` with `stellar contract build` / network, and `@stellar/stellar-sdk` with [releases](https://github.com/stellar/js-stellar-sdk/releases). Bump versions only after smoke-testing snippets.
+3. **Issuers & anchors are time-sensitive** — Circle USDC, EURC, tethered assets, and anchor corridors **change or sunset**; always defer to issuer lists, `stellar.toml`, and explorers at build time.
+4. **Deprecated vs supported APIs** — Horizon remains in examples where REST is the point, but label it **legacy**; default narrative should point to **Stellar RPC** and the [migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc).
+5. **SDK API shape** — Use patterns that match the official doc for the **same major** SDK (e.g. `TransactionBuilder.fromXDR` for SEP-10, `Contract.call` + `nativeToScVal` + `SorobanRpc.assembleTransaction` for Soroban). When in doubt, add one line telling the agent to confirm the symbol in the installed package’s docs.
 
 ---
 

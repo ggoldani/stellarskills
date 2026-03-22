@@ -23,7 +23,8 @@ Soroban provides a robust `testutils` feature that lets you run smart contract t
 In your `Cargo.toml`, ensure `testutils` is enabled for dev:
 ```toml
 [dev-dependencies]
-soroban-sdk = { version = "21.0.0", features = ["testutils"] }
+# Must match the `soroban-sdk` version your contracts use (see /soroban/SKILL.md and https://docs.rs/soroban-sdk/latest/soroban_sdk/)
+soroban-sdk = { version = "25.3.0", features = ["testutils"] }
 ```
 
 ### Basic Test Structure
@@ -78,7 +79,8 @@ Validates that the contract actually requested the correct signatures.
 ```rust
 client.secure_action(&user);
 
-// Verify the contract requested auth from `user` for `secure_action`
+// Verify the contract requested auth from `user` for `secure_action`.
+// Tuple shape and how you obtain the contract `Address` vary by soroban-sdk version — check docs.rs for your pinned `soroban-sdk`.
 assert_eq!(
     env.auths(),
     std::vec![(
@@ -197,6 +199,7 @@ stellar network add \
   --rpc-url https://soroban-testnet.stellar.org \
   --network-passphrase "Test SDF Network ; September 2015"
 ```
+(Example uses the SDF public **testnet** RPC host for quick setup; for production-like or high-volume testing, pick a URL from [Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers).)
 
 **2. Fund identity on Testnet:**
 ```bash
@@ -212,6 +215,16 @@ stellar contract deploy \
 ```
 
 For E2E tests, you can write JavaScript/TypeScript scripts using `@stellar/stellar-sdk` to simulate frontend interactions against the deployed Testnet contract (see `/rpc/SKILL.md` for JS SDK usage).
+
+---
+
+## Official documentation
+
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
+- Network resource limits & fees: https://developers.stellar.org/docs/networks/resource-limits-fees  
+- Stellar Lab network limits: https://lab.stellar.org/network-limits  
+- Soroban overview: https://developers.stellar.org/docs/build/smart-contracts/overview  
 
 ---
 

@@ -1,98 +1,95 @@
 ---
 name: stellarskills-x402
-description: Pay-per-API calls for AI Agents on Stellar. Monetize endpoints natively without subscriptions or credit cards using HTTP 402.
+description: HTTP 402 micropayments on Stellar via x402 — Soroban token transfers, auth entries, facilitator. Not the same as EVM/Base x402.
 ---
 
-# STELLARSKILLS — x402 Protocol (Agent Economy)
+# STELLARSKILLS — x402 on Stellar
 
-> Pay-per-API calls for AI Agents on Stellar. Monetize endpoints natively without subscriptions or credit cards using HTTP 402.
-
-> ⚠️ **CUTTING EDGE TECH:** The x402 protocol on Stellar is extremely new. The SDKs and middleware patterns shown here may change rapidly. Always verify against the latest Coinbase/Stellar x402 documentation and contribute updates via PR!
-
----
-
-## 1. What is x402?
-
-x402 revives the reserved `402 Payment Required` HTTP status code. It allows servers to monetize endpoints per-request and allows clients (especially autonomous AI Agents) to pay for that request natively using digital assets (like USDC) on the Stellar Network.
-
-Instead of a human signing up for a subscription tier and providing a credit card, an AI Agent can dynamically pay 1/100th of a cent via a Stellar micropayment every time it hits your API.
-
-### The Flow
-1. **Client** requests a protected resource.
-2. **Server** responds with HTTP `402` and payment requirements.
-3. **Client** signs a Stellar payment transaction using their keypair (with Soroban auth).
-4. **Client** retries the request with the signed payment in the `X-PAYMENT` header.
-5. **Server** verifies the payment via a facilitator, settles on Stellar, and returns the resource.
+> Pay-per-request APIs using HTTP **402 Payment Required** on Stellar. The Stellar flow uses **Soroban / SEP-41-style token transfers**, **authorization entry signing** (see SEP-43), and often a **facilitator** — it is **not** identical to x402 on Base/EVM.
 
 ---
 
-## 2. Server Integration (Selling Access)
+## Official documentation (always verify current APIs)
 
-To protect an API endpoint, use the x402 payment middleware. The middleware intercepts the request and handles the 402 rejection and the subsequent payment verification automatically.
+- **x402 on Stellar:** https://developers.stellar.org/docs/build/apps/x402  
+- **Built on Stellar facilitator:** https://developers.stellar.org/docs/build/apps/x402/built-on-stellar  
+- **Stellar x402 repository:** https://github.com/stellar/x402-stellar  
+- **Protocol spec:** https://x402.org  
+- **npm (Stellar implementation):** https://www.npmjs.com/package/@x402/stellar  
+
+---
+
+## 1. How Stellar x402 differs from EVM
+
+Per the [`@x402/stellar`](https://www.npmjs.com/package/@x402/stellar) package and Stellar docs:
+
+- **Ledger-based expiration** (not only wall-clock timestamps) for payment payloads.
+- **Auth entry signing** — the client typically signs **authorization entries**; a **facilitator** verifies and may **rebuild and submit** the on-chain transaction (contrast with “sign full legacy payment tx”-only mental models).
+- **Default asset** is often **USDC** as a Soroban token (**7 decimals** on Stellar in the default helpers — confirm in your integration).
+- **Mainnet** requires a **configured RPC URL** from a provider listed under **[Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers)**. Testnet can use a provider URL or the SDF public testnet host — see `@x402/stellar` and the official x402 docs.
+
+---
+
+## 2. Packages
 
 ```bash
-npm install stellar-x402 express
+npm install @x402/stellar @x402/core
 ```
 
-```javascript
-import express from 'express';
-import { paymentMiddleware } from 'stellar-x402/server';
+Optional HTTP client wrapper: `@x402/fetch` (see x402 monorepo / package docs).
 
-const app = express();
-
-// Protect a specific route
-app.use(
-  '/api/premium-data',
-  paymentMiddleware({
-    // Configuration dictates price and the Stellar address receiving the payment
-    token: 'USDC',
-    amount: '0.05',
-    recipient: process.env.STELLAR_MERCHANT_PUBLIC_KEY
-  })
-);
-
-app.get('/api/premium-data', (req, res) => {
-  // This block only executes if the client successfully paid
-  res.json({ secret: "AI agents rule the world" });
-});
-
-app.listen(3000);
-```
+Do **not** use obsolete package names such as `stellar-x402` for the current Stellar-native stack.
 
 ---
 
-## 3. Client Integration (Agent Paying for Access)
+## 3. High-level flow
 
-If you are writing an AI Agent that needs to consume a paid x402 endpoint, do not handle the `402` retry logic manually. Use the client wrapper.
+1. Client calls a protected HTTP resource.
+2. Server responds with **402** and **payment requirements** (machine-readable).
+3. Client uses **`@x402/stellar`** (with a signer, e.g. `createEd25519Signer`) to satisfy requirements — including signing **auth entries** as required by the Stellar scheme.
+4. Client retries with the **`X-PAYMENT`** (or protocol-specified) header.
+5. **Facilitator** (e.g. production setups described under **Built on Stellar**) validates and settles on-chain; server returns the resource.
 
-The client wrapper automatically intercepts `402 Payment Required` responses, parses the cost, uses the Agent's private key to sign a transaction, and transparently retries the request with the `X-PAYMENT` header attached.
+For exact TypeScript patterns (`x402Client`, `ExactStellarScheme`, server/facilitator registration), follow **the current Stellar docs and the `@x402/stellar` README** — they evolve quickly.
 
-```javascript
-import { wrapFetchWithPayment } from 'stellar-x402/client-http';
-import { Keypair } from '@stellar/stellar-sdk';
+---
 
-// The agent's wallet
-const keypair = Keypair.fromSecret(process.env.STELLAR_SECRET_KEY);
+## 4. Minimal client pattern (illustrative)
 
-// Wrap the native fetch API
-const fetchWithPayment = wrapFetchWithPayment(fetch, keypair);
+```typescript
+import { x402Client } from "@x402/core/client";
+import { createEd25519Signer } from "@x402/stellar";
+import { ExactStellarScheme } from "@x402/stellar/exact/client";
 
-async function getPremiumData() {
-  try {
-    // 1. Initial request (fails with 402)
-    // 2. Wrapper automatically signs payment
-    // 3. Wrapper automatically retries request with X-PAYMENT header
-    // 4. Returns the final 200 OK response
-    const response = await fetchWithPayment('https://api.example.com/premium-data');
-
-    const data = await response.json();
-    console.log(data); // { secret: "AI agents rule the world" }
-
-  } catch (error) {
-    console.error("Payment or network failed:", error);
-  }
-}
+const signer = createEd25519Signer(process.env.STELLAR_SECRET_KEY!, "stellar:testnet");
+const client = new x402Client().register("stellar:*", new ExactStellarScheme(signer));
+// Use client + @x402/fetch or your HTTP layer per official examples.
 ```
+
+Use **`stellar:pubnet`** / **`stellar:testnet`** (CAIP-2 style identifiers) and pass a **custom RPC URL** on mainnet as required.
+
+---
+
+## 5. USDC on Stellar (Circle issuers)
+
+Always verify on [Circle USDC contract addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses):
+
+| Network | Issuer (classic `G…` account) |
+|---------|------------------------------|
+| **Public mainnet** | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+| **Testnet** | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+
+x402 on Stellar often uses the **token contract** / SEP-41 interface — use package helpers such as `getUsdcAddress(network)` from `@x402/stellar` where available.
+
+---
+
+## 6. Facilitator & production (Built on Stellar)
+
+For production, use the **Built on Stellar** facilitator flow documented here (includes integration with the **OpenZeppelin Relayer** for relaying transactions):
+
+https://developers.stellar.org/docs/build/apps/x402/built-on-stellar  
+
+Also see the launch post: https://stellar.org/blog/foundation-news/x402-on-stellar  
 
 ---
 

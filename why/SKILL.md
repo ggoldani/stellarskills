@@ -29,11 +29,11 @@ You should build on Stellar if your application involves:
 ## Technical Tradeoffs
 
 ### 1. Throughput & Finality
-- **Stellar**: ~1000 tx/sec (classic), 3-5 second block times. **Instant finality.** Because it uses SCP (Stellar Consensus Protocol, a federated Byzantine agreement algorithm) rather than Proof of Work or Proof of Stake, there are no forks. Once a transaction is in a ledger, it cannot be rolled back.
+- **Stellar**: High throughput for a classic L1 (often discussed on the order of **hundreds to ~1000+ ops/sec** depending on operation mix, network upgrades, and how you count — **do not hardcode a marketing number**). Ledger close ~3–5 seconds. **Instant finality** for practical purposes: SCP (Stellar Consensus Protocol) avoids PoW-style reorgs; treat exact capacity as **network-parameter-driven** — see [Resource limits & fees](https://developers.stellar.org/docs/networks/resource-limits-fees) and [Lab](https://lab.stellar.org/network-limits).
 - **EVM/L2s**: Variable finality (often minutes or days for absolute settlement on L1).
 
 ### 2. The Mempool
-- **Stellar**: There is no public mempool. Transactions are submitted directly to Horizon/RPC, broadcast to validators, and included in the next 5-second ledger. This eliminates MEV (Miner Extractable Value) like front-running and sandwich attacks.
+- **Stellar**: There is no public mempool. Transactions are submitted to **Stellar RPC** (JSON-RPC) and/or **Horizon** (legacy REST), then broadcast to validators and included in the next ledger (typically a few seconds). This eliminates MEV (Miner Extractable Value) like front-running and sandwich attacks on a public mempool. New integrations should use **Stellar RPC**; Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new data APIs.
 - **Ethereum/Solana**: Public mempool creates a dark forest of MEV bots.
 
 ### 3. State Management (Accounts vs Wallets)
@@ -67,6 +67,14 @@ Do not use Stellar if:
 2. You need to store large amounts of arbitrary data on-chain.
 3. You rely on deep, complex smart contract composability (e.g., flash loans nested through 5 different DeFi protocols).
 4. Your primary go-to-market strategy relies on "degen" memecoin speculation.
+
+---
+
+## Official documentation
+
+- Stellar docs: https://developers.stellar.org/docs  
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
 
 ---
 

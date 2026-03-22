@@ -23,9 +23,12 @@ Features:
 Use `ManageBuyOffer` or `ManageSellOffer`. They are effectively identical, just framed differently (I want to buy X vs I want to sell Y).
 
 ```javascript
-import { Operation, Asset } from "@stellar/stellar-sdk";
+import { Horizon, Operation, Asset, LiquidityPoolFeeV18 } from "@stellar/stellar-sdk";
 
-const USDC = new Asset("USDC", "GA5...");
+// Circle USDC — mainnet vs testnet: https://developers.circle.com/stablecoins/usdc-contract-addresses
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+const USDC = new Asset("USDC", USDC_ISSUER_MAINNET); // switch issuer on testnet
 const XLM = Asset.native();
 
 // "I want to sell 100 USDC to buy XLM at a price of 10 XLM per USDC"
@@ -57,7 +60,7 @@ const cancelOffer = Operation.manageSellOffer({
 
 ## Automated Market Makers (AMM) / Liquidity Pools
 
-Stellar also supports protocol-level AMMs. Users can provide liquidity to pools (CPMM: $x \times y = k$) and earn a 0.3% protocol fee on swaps.
+Stellar also supports protocol-level AMMs. Users can provide liquidity to pools (CPMM: $x \times y = k$). **Swap fees** depend on each pool’s on-chain fee parameter (e.g. constants like `LiquidityPoolFeeV18` in the SDK map to protocol-defined basis points — confirm the fee tier in the [list of operations](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations) / current network docs rather than hardcoding a percentage).
 
 ### Get a Liquidity Pool ID
 
@@ -104,37 +107,37 @@ Path payments are the most powerful DEX feature. They allow an account to send A
 
 ### Strict Send (Known Input, Variable Output)
 
-"I want to spend exactly 10 USDC, give the recipient as much BRL as possible."
+"I want to spend exactly 10 USDC, give the recipient as much XLM as possible." (Substitute any `destAsset` you have a trustline for — always use **code + issuer** for non-native assets.)
 
 ```javascript
 const strictSend = Operation.pathPaymentStrictSend({
   sendAsset: USDC,
   sendAmount: "10.0",           // Exactly 10 USDC spent
   destination: recipientKey,
-  destAsset: BRL,
-  destMin: "45.0",              // Slippage: tx fails if recipient gets < 45 BRL
+  destAsset: XLM,
+  destMin: "5.0",               // Slippage: tx fails if recipient gets < this much XLM
   path: [],                     // Optional intermediary assets
 });
 ```
 
 ### Strict Receive (Variable Input, Known Output)
 
-"The recipient must receive exactly 50 BRL, spend as little of my USDC as possible."
+"The recipient must receive exactly 50 XLM, spend as little of my USDC as possible."
 
 ```javascript
 const strictReceive = Operation.pathPaymentStrictReceive({
   sendAsset: USDC,
   sendMax: "11.0",              // Slippage: tx fails if costs > 11 USDC
   destination: recipientKey,
-  destAsset: BRL,
-  destAmount: "50.0",           // Exactly 50 BRL received
+  destAsset: XLM,
+  destAmount: "50.0",           // Exactly 50 XLM received
   path: [],                     // Optional intermediary assets
 });
 ```
 
 ### Path Finding
 
-You usually don't need to specify the `path` array manually. Let Horizon find the best path across order books and AMMs.
+You usually don't need to specify the `path` array manually. **Horizon** can compute paths across order books and AMMs (REST). Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for **new** data integrations — prefer **[Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc)** and the [migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) when building new indexers or backends; this pattern remains valid for legacy stacks.
 
 ```javascript
 const server = new Horizon.Server("https://horizon.stellar.org");
@@ -142,7 +145,7 @@ const server = new Horizon.Server("https://horizon.stellar.org");
 // Find best path for a Strict Receive
 const paths = await server.strictReceivePaths({
   sourceAssets: [USDC, XLM],    // What assets do I have to spend?
-  destinationAsset: BRL,
+  destinationAsset: XLM,
   destinationAmount: "50.0",
 }).call();
 
@@ -164,6 +167,15 @@ Pass `bestPath.path` into the `path` array of your Operation.
 | `op_over_source_max` | (Strict Receive) Slippage hit, cost too high | Adjust `sendMax` |
 | `op_under_dest_min` | (Strict Send) Slippage hit, output too low | Adjust `destMin` |
 | `op_no_trust` | Recipient lacks trustline for destination asset | Recipient must `changeTrust` |
+
+---
+
+## Official documentation
+
+- SDEX & liquidity pools: https://developers.stellar.org/docs/learn/fundamentals/liquidity-on-stellar-sdex-liquidity-pools  
+- List of operations: https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations  
+- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
 
 ---
 

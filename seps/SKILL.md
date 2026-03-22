@@ -22,6 +22,21 @@ The most important for builders:
 - **SEP-31** — Cross-border payment API (sender to receiver via anchor)
 - **SEP-38** — Quote API (get exchange rates before transacting)
 
+### Circle USDC issuers (for `asset_issuer` / `stellar:USDC:…` strings)
+
+Verify on https://developers.circle.com/stablecoins/usdc-contract-addresses :
+
+| Network | Issuer |
+|---------|--------|
+| **Mainnet** | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+| **Testnet** | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+
+```javascript
+const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"; // mainnet; use testnet issuer on testnet
+```
+
+**Stellar docs (SEPs overview):** https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals  
+
 ---
 
 ## SEP-1 — stellar.toml
@@ -107,14 +122,14 @@ The challenge is a Stellar transaction with:
 
 ### Step 2 & 3: Client signs challenge (client-side)
 ```javascript
-import { Transaction, Networks, Keypair } from "@stellar/stellar-sdk";
+import { TransactionBuilder, Keypair } from "@stellar/stellar-sdk";
 
 // Fetch challenge
 const res = await fetch(`https://api.anchor.com/auth?account=${publicKey}`);
 const { transaction, network_passphrase } = await res.json();
 
-// Parse and sign
-const tx = new Transaction(transaction, network_passphrase);
+// Parse and sign — challenge is transaction envelope XDR (string). Use the constructor / helper that matches your **installed** @stellar/stellar-sdk (see release notes + SEP-10 examples in the official docs).
+const tx = TransactionBuilder.fromXDR(transaction, network_passphrase);
 tx.sign(Keypair.fromSecret(secret));
 
 // Submit signed challenge
@@ -377,7 +392,16 @@ When building an anchor or integrating with one:
 - [ ] Transaction status polling supported with all status values
 - [ ] Memo handling: always include memo when anchor specifies one
 - [ ] CORS headers on all API endpoints
-- [ ] Test with Stellar Demo Wallet (demo.stellar.org)
+- [ ] Test with [Stellar Lab](https://lab.stellar.org) and/or a SEP-compatible wallet (verify current wallet URLs in the official Stellar docs / SEP references)
+
+---
+
+## Official documentation
+
+- SEPs overview: https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals  
+- SEP repository: https://github.com/stellar/stellar-protocol/tree/master/ecosystem  
+- Stellar RPC (for on-chain verification in apps): https://developers.stellar.org/docs/data/apis/rpc  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
 
 ---
 

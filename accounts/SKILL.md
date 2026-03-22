@@ -34,6 +34,8 @@ const kp = Keypair.fromSecret("SCZANGBA5RLCQ6LXXPJ7FJZLOL3ZRIQGXKVBIMKTSLK5DGNEC
 Accounts do NOT exist until explicitly created and funded on-chain. Generating a keypair does not create an account.
 
 ### Fund with createAccount operation
+> **Horizon** is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations; this pattern is for legacy REST. Prefer [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) + [migration](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) for new apps.
+
 ```javascript
 import { TransactionBuilder, Networks, Operation, Asset, BASE_FEE } from "@stellar/stellar-sdk";
 import { Horizon } from "@stellar/stellar-sdk";
@@ -96,18 +98,20 @@ console.log(`Min balance: ${minBalance} XLM`);
 
 ---
 
-## Account Flags
+## Issuer account flags (for issued assets)
 
-Accounts can have flags set by the issuer. Relevant for asset issuers:
+These flags are set on the **issuing account** of an asset (via `setOptions`), not on arbitrary “user” accounts. They control how the **issued asset** behaves (authorization, freeze, clawback).
 
-| Flag | Effect |
-|------|--------|
-| `AUTH_REQUIRED` | Users must be authorized before holding the asset |
-| `AUTH_REVOCABLE` | Issuer can revoke trustlines (freeze assets) |
-| `AUTH_IMMUTABLE` | Account flags can never be changed |
-| `AUTH_CLAWBACK_ENABLED` | Issuer can claw back assets from any account |
+| Flag | Effect on the asset |
+|------|---------------------|
+| `AUTH_REQUIRED` | Holders must be authorized before they can hold the asset |
+| `AUTH_REVOCABLE` | Issuer can freeze individual trustlines |
+| `AUTH_IMMUTABLE` | Issuer account flags can no longer be changed |
+| `AUTH_CLAWBACK_ENABLED` | Issuer can claw back the asset from holders |
 
-For regular user accounts, flags are usually not set.
+See [Accounts](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts) and [assets / trustlines](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/assets) in the official docs.
+
+Regular **non-issuer** accounts use different account-level settings (e.g. signers, thresholds) — do not confuse the two models.
 
 ---
 
@@ -216,6 +220,8 @@ const tx = new TransactionBuilder(muxed, { fee: BASE_FEE, networkPassphrase: Net
 
 ## Loading Account State
 
+> Legacy **Horizon** example; see deprecation note above.
+
 ```javascript
 const server = new Horizon.Server("https://horizon.stellar.org");
 
@@ -231,9 +237,14 @@ console.log(account.flags);           // auth flags
 
 ### Check specific balance
 ```javascript
+// Circle USDC issuers — verify: https://developers.circle.com/stablecoins/usdc-contract-addresses
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+
 const xlmBalance = account.balances.find(b => b.asset_type === "native");
+const usdcIssuer = USDC_ISSUER_MAINNET; // use USDC_ISSUER_TESTNET on testnet
 const usdcBalance = account.balances.find(
-  b => b.asset_code === "USDC" && b.asset_issuer === "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"
+  b => b.asset_code === "USDC" && b.asset_issuer === usdcIssuer
 );
 ```
 
@@ -269,6 +280,16 @@ npm install @stellar/stellar-sdk        # JavaScript / TypeScript
 pip install stellar-sdk                 # Python
 go get github.com/stellar/go/clients/horizonclient  # Go
 ```
+
+---
+
+## Official documentation
+
+- Stellar docs (root): https://developers.stellar.org/docs  
+- Accounts: https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts  
+- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
+- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
 
 ---
 

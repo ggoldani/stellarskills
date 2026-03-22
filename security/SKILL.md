@@ -7,6 +7,8 @@ description: Critical security patterns, common vulnerabilities, and best practi
 
 > Critical security patterns, common vulnerabilities, and best practices for writing Soroban smart contracts in Rust.
 
+**Protocol note:** From **Protocol 25 (X-Ray)** onward, the network adds native ZK-oriented primitives for advanced use cases. If you build privacy or proof-based flows, read the official upgrade guide and current limits in the Stellar docs — do not assume this skill replaces those specifications: https://stellar.org/blog/developers/stellar-x-ray-protocol-25-upgrade-guide  
+
 ---
 
 ## 1. Authentication & Authorization
@@ -178,6 +180,15 @@ pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) {
 ```
 
 **Security Risk**: Upgrades can maliciously alter contract logic. If building a trustless protocol, either omit the upgrade function or place the admin address under a timelocked DAO/multisig.
+
+---
+
+## Official documentation
+
+- Soroban overview: https://developers.stellar.org/docs/build/smart-contracts/overview  
+- Contract authorization: https://developers.stellar.org/docs/build/guides/auth  
+- Storing data / storage: https://developers.stellar.org/docs/build/smart-contracts/getting-started/storing-data  
+- Fees & metering (resource limits affect DoS): https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering  
 
 ---
 
