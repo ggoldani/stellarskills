@@ -1,6 +1,6 @@
 {
   "name": "stellarskills",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Stellar Network knowledge engineered specifically for AI agents",
   "type": "module",
   "bin": {
