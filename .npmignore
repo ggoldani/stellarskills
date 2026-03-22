@@ -1,1 +1,2 @@
+# Safety net if package.json "files" is broadened again (whitelist in package.json is authoritative).
 AUDIT_*.md
