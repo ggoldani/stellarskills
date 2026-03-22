@@ -8,7 +8,28 @@
   },
   "files": [
     "bin",
-    "**/*.md"
+    ".claude-plugin",
+    "README.md",
+    "SKILL.md",
+    "accounts/SKILL.md",
+    "anchors/SKILL.md",
+    "assets/SKILL.md",
+    "dex/SKILL.md",
+    "fees/SKILL.md",
+    "frontend/SKILL.md",
+    "horizon/SKILL.md",
+    "local-node/SKILL.md",
+    "openzeppelin/SKILL.md",
+    "operations/SKILL.md",
+    "rpc/SKILL.md",
+    "security/SKILL.md",
+    "seps/SKILL.md",
+    "soroban/SKILL.md",
+    "storage/SKILL.md",
+    "testing/SKILL.md",
+    "tools/SKILL.md",
+    "why/SKILL.md",
+    "x402/SKILL.md"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
