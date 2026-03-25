@@ -70,8 +70,8 @@ pub struct MyContract;
 // Implement contract functions
 #[contractimpl]
 impl MyContract {
-    /// Initialize the contract (called once after deploy)
-    pub fn initialize(env: Env, admin: Address) {
+    /// Constructor ensures atomic initialization of the contract
+    pub fn __constructor(env: Env, admin: Address) {
         admin.require_auth();
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::TotalSupply, &0_i128);
@@ -238,11 +238,13 @@ Output: `target/wasm32-unknown-unknown/release/my_contract.wasm`
 ## Deploy
 
 ```bash
-# Deploy to testnet
+# Deploy to testnet (and run __constructor if one exists)
 stellar contract deploy \
   --wasm target/wasm32-unknown-unknown/release/my_contract.wasm \
   --source my-key \
-  --network testnet
+  --network testnet \
+  -- \
+  --admin GADMIN_ADDRESS
 
 # Returns: CONTRACT_ID (C...)
 ```
@@ -275,8 +277,8 @@ stellar contract invoke \
   --source my-key \
   --network testnet \
   -- \
-  initialize \
-  --admin GADMIN_ADDRESS
+  get_balance \
+  --address GADMIN_ADDRESS
 ```
 
 ```javascript

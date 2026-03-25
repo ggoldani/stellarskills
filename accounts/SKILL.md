@@ -13,6 +13,8 @@ description: Keypairs, account creation, signers, multisig, minimum balance, spo
 
 A Stellar account is identified by a **public key** (G...) and controlled by a **secret key** (S...). Both are base32-encoded 32-byte Ed25519 keys.
 
+> **Note on Passkeys & Web3 Auth:** While classic Stellar accounts rely on Ed25519 keys, modern Soroban smart wallets often leverage secp256r1 keys (enabled in Protocol 21) to allow end-users to sign via Webauthn (Passkeys) like FaceID or TouchID directly from their devices without a browser extension. See [Tutorial: Passkey Dapp](https://developers.stellar.org/docs/build/apps/guestbook/overview).
+
 ```javascript
 import { Keypair } from "@stellar/stellar-sdk";
 
