@@ -110,6 +110,21 @@
       "name": "stellarskills-x402",
       "description": "Pay-per-API calls for AI Agents on Stellar. Monetize endpoints natively without subscriptions or credit cards using HTTP 402.",
       "path": "../x402/SKILL.md"
+    },
+    {
+      "name": "stellarskills-mpp",
+      "description": "Machine Payments Protocol (MPP) on Stellar. Programmatic, per-request payments over HTTP for AI agents and APIs using Soroban SAC token transfers natively without an external facilitator.",
+      "path": "../mpp/SKILL.md"
+    },
+    {
+      "name": "stellarskills-passkeys",
+      "description": "Learn how to integrate Passkeys and smart wallets on Stellar using passkey-kit for dApp development. Replace traditional seed phrases with WebAuthn (Face ID / Touch ID) powered by secp256r1 keys.",
+      "path": "../passkeys/SKILL.md"
+    },
+    {
+      "name": "stellarskills-state-archival",
+      "description": "Manage Soroban state bloat using TTLs and State Archival. How to restore archived data, test TTL extension logic, and manually create restoration footprints using the Stellar JS SDK.",
+      "path": "../state-archival/SKILL.md"
     }
   ]
 }

@@ -54,6 +54,7 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 |------|-------|
 | Soroban smart contracts (Rust/WASM) | `raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md` |
 | Soroban security patterns, auth, reentrancy | `raw.githubusercontent.com/ggoldani/stellarskills/main/security/SKILL.md` |
+| State Archival: Restoring TTL expired data, Footprints | `raw.githubusercontent.com/ggoldani/stellarskills/main/state-archival/SKILL.md` |
 | Testing Soroban contracts, Stellar CLI, testnet | `raw.githubusercontent.com/ggoldani/stellarskills/main/testing/SKILL.md` |
 
 ### Payments & Anchors
@@ -67,7 +68,9 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 |------|-------|
 | SDKs, wallets, explorers, Stellar Lab, CLI | `raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md` |
 | Frontend integration — Freighter, SEP-10 auth, browser SDK | `raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md` |
+| Passkeys and Smart Wallets integration (`passkey-kit`) | `raw.githubusercontent.com/ggoldani/stellarskills/main/passkeys/SKILL.md` |
 | x402 HTTP micropayments on Stellar (`@x402/stellar`, facilitator) | `raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md` |
+| Machine Payments Protocol (MPP) on Stellar (`@stellar/mpp`) | `raw.githubusercontent.com/ggoldani/stellarskills/main/mpp/SKILL.md` |
 | OpenZeppelin audited contracts, SDKs, and Contract Wizard | `raw.githubusercontent.com/ggoldani/stellarskills/main/openzeppelin/SKILL.md` |
 
 ### Context
@@ -137,6 +140,9 @@ Every transaction must be signed with the correct network passphrase:
 | Network resource limits & fees | https://developers.stellar.org/docs/networks/resource-limits-fees |
 | Fees & metering (fundamentals) | https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering |
 | x402 on Stellar | https://developers.stellar.org/docs/build/apps/x402 |
+| MPP on Stellar | https://developers.stellar.org/docs/build/agentic-payments/mpp |
+| Passkeys Dapp Tutorial | https://developers.stellar.org/docs/build/apps/guestbook/overview |
+| State Archival Guides | https://developers.stellar.org/docs/build/guides/archival |
 | Horizon Mainnet (legacy REST) | https://horizon.stellar.org |
 | Horizon Testnet (legacy REST) | https://horizon-testnet.stellar.org |
 | Stellar RPC (pick an endpoint) | Prefer a URL from [RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers) (Blockdaemon, Validation Cloud, QuickNode, etc.). SDF also exposes a public **testnet** JSON-RPC host (`https://soroban-testnet.stellar.org`) for development — not for production load. |

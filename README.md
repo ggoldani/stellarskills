@@ -117,11 +117,14 @@ clawhub install stellarskills
 | **Security** | [`/security/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/security/SKILL.md) | Critical security patterns, common vulnerabilities, and best practices for writing Soroban smart contracts in Rust. |
 | **SEPs** | [`/seps/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/seps/SKILL.md) | SEP-1 (stellar.toml), SEP-6, SEP-10 (auth), SEP-12 (KYC), SEP-24, SEP-31, SEP-38 — the interoperability standards that power Stellar's payment rails. |
 | **Soroban** | [`/soroban/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md) | Stellar's smart contract platform. Rust/WASM contracts, storage types, auth, invocation, resource limits. |
+| **State Archival** | [`/state-archival/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/state-archival/SKILL.md) | Manage Soroban state bloat using TTLs and State Archival. How to restore archived data, test TTL extension logic, and manually create restoration footprints using the Stellar JS SDK. |
 | **Storage** | [`/storage/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/storage/SKILL.md) | How to manage state in Soroban. Understanding Persistent, Temporary, and Instance storage, TTL/Rent, and migrating from Solidity mappings. |
 | **Testing** | [`/testing/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/testing/SKILL.md) | How to test Soroban smart contracts using Rust's built-in testing framework and the Stellar CLI. |
 | **Tools** | [`/tools/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md) | The essential tools, SDKs, wallets, and explorers for building on Stellar. |
 | **Why Stellar?** | [`/why/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/why/SKILL.md) | A sober, honest assessment of what Stellar is for, its tradeoffs, and why you would choose it over EVM or Solana. |
 | **x402** | [`/x402/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md) | HTTP 402 micropayments on Stellar via `@x402/stellar`, auth entries, facilitator (Built on Stellar). Not the same as EVM/Base x402. |
+| **mpp** | [`/mpp/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/mpp/SKILL.md) | Machine Payments Protocol (MPP) on Stellar. Programmatic, per-request payments over HTTP for AI agents natively via `@stellar/mpp`. |
+| **passkeys** | [`/passkeys/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/passkeys/SKILL.md) | Learn how to integrate Passkeys and smart wallets on Stellar using `passkey-kit` for dApp development natively. |
 
 ---
 
