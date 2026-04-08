@@ -1,11 +1,11 @@
 ---
 name: stellarskills-soroban
-description: Stellar's smart contract platform. Rust/WASM contracts, storage types, auth, invocation, resource limits.
+description: Stellar's smart contract platform. Rust/WASM contracts, constructors, storage types, auth, invocation, resource limits.
 ---
 
 # STELLARSKILLS — Soroban
 
-> Stellar's smart contract platform. Rust/WASM contracts, storage types, auth, invocation, resource limits.
+> Stellar's smart contract platform. Rust/WASM contracts, constructors, storage types, auth, invocation, resource limits.
 
 ---
 
@@ -70,9 +70,8 @@ pub struct MyContract;
 // Implement contract functions
 #[contractimpl]
 impl MyContract {
-    /// Initialize the contract (called once after deploy)
-    pub fn initialize(env: Env, admin: Address) {
-        admin.require_auth();
+    /// Constructor (called automatically once upon deployment, introduced in Protocol 22)
+    pub fn __constructor(env: Env, admin: Address) {
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::TotalSupply, &0_i128);
     }
@@ -238,13 +237,20 @@ Output: `target/wasm32-unknown-unknown/release/my_contract.wasm`
 ## Deploy
 
 ```bash
-# Deploy to testnet
+# Deploy to testnet with constructor arguments
 stellar contract deploy \
   --wasm target/wasm32-unknown-unknown/release/my_contract.wasm \
   --source my-key \
-  --network testnet
+  --network testnet \
+  -- \
+  --admin GADMIN_ADDRESS
 
 # Returns: CONTRACT_ID (C...)
+```
+
+In tests, the constructor arguments are passed when registering the contract:
+```rust
+let contract_id = env.register(MyContract, (admin_address,));
 ```
 
 ```javascript
@@ -275,8 +281,8 @@ stellar contract invoke \
   --source my-key \
   --network testnet \
   -- \
-  initialize \
-  --admin GADMIN_ADDRESS
+  get_balance \
+  --address GUSER_ADDRESS
 ```
 
 ```javascript

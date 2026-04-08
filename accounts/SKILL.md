@@ -1,11 +1,11 @@
 ---
 name: stellarskills-accounts
-description: Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts.
+description: Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts, smart wallets, passkeys.
 ---
 
 # STELLARSKILLS — Accounts
 
-> Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts.
+> Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts, smart wallets, passkeys.
 
 ---
 
@@ -112,6 +112,24 @@ These flags are set on the **issuing account** of an asset (via `setOptions`), n
 See [Accounts](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts) and [assets / trustlines](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/assets) in the official docs.
 
 Regular **non-issuer** accounts use different account-level settings (e.g. signers, thresholds) — do not confuse the two models.
+
+---
+
+## Smart Wallets & Passkeys
+
+**Smart wallets** are contract accounts that act as user wallets. Instead of relying entirely on native Stellar signers and a single secret key, they hold assets and enforce programmable authorization inside a `__check_auth` function (e.g. spend limits, timelocks, allow lists).
+
+A major use case for Smart Wallets is **Passkeys (WebAuthn)**:
+- Passkeys allow familiar, passwordless flows (Touch ID, Face ID, hardware keys) without exposing seed phrases.
+- WebAuthn authenticators typically use the **secp256r1 (prime256v1)** curve.
+- Stellar natively verifies `secp256r1` signatures on-chain (introduced in Protocol 21), allowing contracts to efficiently validate WebAuthn assertions in `__check_auth`.
+
+**In practice:**
+1. **Registration:** Use WebAuthn to create a device keypair. Store the public key (and credential ID) in the smart wallet contract state.
+2. **Signing:** Request a WebAuthn assertion when the user approves an action, yielding a signature.
+3. **Verification:** Pass the signature and credential ID to the contract. The `__check_auth` function verifies the `secp256r1` signature and applies any custom policies.
+
+*See official guide: [Smart Wallets](https://developers.stellar.org/docs/build/guides/contract-accounts/smart-wallets).*
 
 ---
 
