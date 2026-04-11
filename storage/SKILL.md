@@ -1,163 +1,152 @@
 ---
 name: stellarskills-storage
-description: How to manage state in Soroban. Understanding Persistent, Temporary, and Instance storage, TTL/Rent, and migrating from Solidity mappings.
+description: Instance, Persistent, and Temporary storage in Soroban. TTL/rent, get/set/has/remove, best practices.
 ---
 
-# STELLARSKILLS — Soroban Host Storage (Data Structures)
+# STELLARSKILLS — Storage
 
-> How to manage state in Soroban. Understanding Persistent, Temporary, and Instance storage, TTL/Rent, and migrating from Solidity mappings.
-
----
-
-## 1. The "Solidity Mapping" Fallacy
-
-If you are migrating from EVM/Solidity to Stellar/Soroban, **do not use Rust's in-memory data structures (`HashMap`, `Vec`, `BTreeMap`) to store unbounded global state** (like user balances).
-
-In Solidity, you write: `mapping(address => uint256) public balances;`
-
-In Soroban, **memory (and CPU, I/O, etc.) are strictly capped per invocation** by validator-voted network limits — the exact numbers **change by protocol version**; do not trust a fixed megabyte figure from a blog. Use [Resource limits & fees](https://developers.stellar.org/docs/networks/resource-limits-fees) and [Stellar Lab → Network limits](https://lab.stellar.org/network-limits) as sources of truth. If you deserialize an entire `Vec` or `Map` of thousands of users into memory to update one balance, the transaction will hit **resource / memory limits** and fail.
-
-**The Solution:** You must interact directly with the Ledger State using **Host Storage** (`env.storage()`). The ledger itself *is* the mapping.
+> Instance, Persistent, and Temporary storage in Soroban. TTL/rent, get/set/has/remove, best practices.
 
 ---
 
-## 2. Defining Storage Keys
+## When to use
 
-In Soroban, you query the ledger by passing a typed "Key". Best practice is to define an `enum` tagged with `#[contracttype]`.
+- Storing contract state (balances, config, allowances)
+- Choosing between Instance, Persistent, or Temporary storage
+- Extending TTL to prevent archival
+- Migrating from Solidity mappings to Soroban host storage
+
+---
+
+## Quick reference
+
+| Storage type | API | Typical use | Default TTL |
+|-------------|-----|-------------|-------------|
+| Instance | `env.storage().instance()` | Contract config, admin, token name | ~1 month |
+| Persistent | `env.storage().persistent()` | User balances, ownership, allowances | ~1 month |
+| Temporary | `env.storage().temporary()` | Reentrancy locks, nonces, rate limits | ~100 ledgers |
+
+---
+
+## Storage keys
+
+Define typed keys with `#[contracttype]`:
 
 ```rust
-use soroban_sdk::{contracttype, Address, String};
+use soroban_sdk::{contracttype, Address};
 
 #[contracttype]
 #[derive(Clone)]
 pub enum DataKey {
-    Admin,                  // A single singleton key
-    Balance(Address),       // A dynamically generated key per user
-    Allowance(Address, Address), // Nested mapping: owner -> spender
-    TokenName,
+    Admin,
+    Balance(Address),
+    Allowance(Address, Address),
 }
 ```
 
 ---
 
-## 3. The Three Storage Tiers
+## Instance storage
 
-Soroban divides storage into three tiers based on cost, lifespan, and access patterns.
-
-### A. Instance Storage (`env.storage().instance()`)
-- **What it is:** Data conceptually "attached" to the contract instance. If the contract is deleted/archived, this data goes with it.
-- **Use Case:** Global configurations, the contract `Admin` address, token names, pausing flags.
-- **Limitations:** You should only store a small number of keys here. All instance storage is loaded into memory simultaneously when the contract is invoked. Do not store user-specific data here.
+Loaded entirely into memory on every invocation. Use for small, contract-global state only.
 
 ```rust
-// Write
-env.storage().instance().set(&DataKey::Admin, &admin_address);
-
-// Read (returns Option)
-let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
-
-// Check if exists
-let has_admin = env.storage().instance().has(&DataKey::Admin);
+let s = env.storage().instance();
+s.set(&DataKey::Admin, &admin);
+let admin: Address = s.get(&DataKey::Admin).unwrap();
+let has = s.has(&DataKey::Admin);
 ```
 
-### B. Persistent Storage (`env.storage().persistent()`)
-- **What it is:** Data that must survive long-term. It cannot be arbitrarily deleted by the network unless its rent expires (TTL).
-- **Use Case:** User balances, token ownership, collateral deposits. (The exact equivalent of a Solidity `mapping`).
-- **Performance:** Only the specific key you request is loaded from the ledger into memory. Highly scalable.
+Extend on every invocation — if instance archives, the contract becomes uncallable:
 
 ```rust
-// Write a user's balance
-env.storage().persistent().set(&DataKey::Balance(user.clone()), &100_i128);
-
-// Read a user's balance (defaulting to 0 if not found)
-let bal: i128 = env.storage().persistent().get(&DataKey::Balance(user)).unwrap_or(0);
-
-// Delete an entry to save state bloat
-env.storage().persistent().remove(&DataKey::Balance(zero_balance_user));
+env.storage().instance().extend_ttl(50_000, 100_000);
 ```
 
-### C. Temporary Storage (`env.storage().temporary()`)
-- **What it is:** Cheap storage designed to expire quickly.
-- **Use Case:** Reentrancy guards, signature nonces, oracle price data that becomes stale after 1 hour, short-lived rate limits.
-- **Performance:** The cheapest form of storage available on Soroban.
+---
+
+## Persistent storage
+
+Per-key loading. One key per read/write — scalable for user-specific state. The direct equivalent of a Solidity mapping.
 
 ```rust
-// Set a reentrancy lock
-env.storage().temporary().set(&DataKey::ReentrancyLock, &true);
+let s = env.storage().persistent();
+let key = DataKey::Balance(user.clone());
 
-// Read the lock
-if env.storage().temporary().has(&DataKey::ReentrancyLock) {
-    panic!("Reentrant call detected!");
+s.set(&key, &100_i128);
+let bal: i128 = s.get(&key).unwrap_or(0);
+let has = s.has(&key);
+s.remove(&DataKey::Balance(zero_balance_user));
+```
+
+---
+
+## Temporary storage
+
+Cheapest tier. Expires fast. Use for short-lived guards.
+
+```rust
+let s = env.storage().temporary();
+s.set(&DataKey::ReentrancyLock, &true);
+
+if s.has(&DataKey::ReentrancyLock) {
+    panic!("Reentrant call");
 }
 ```
 
 ---
 
-## 4. TTL and State Rent (The "Archival" Problem)
+## TTL and rent
 
-Stellar charges "rent" to keep data active in the ledger. Every piece of storage has a TTL (Time-To-Live), measured in ledgers (1 ledger = ~5 seconds).
+Every storage entry has a TTL in ledgers (~5s each). When TTL hits 0, data is archived and unreadable until restored.
 
-If the TTL reaches 0, the data is **Archived**. It still exists, but contracts cannot read or write to it until a user manually submits a `RestoreFootprint` transaction.
-
-**As a developer, you must explicitly extend the TTL of data you care about during invocations.**
-
-### Extending Instance Storage
-You should generally extend the Instance TTL on *every* contract invocation, because if the Instance archives, the entire contract becomes uncallable.
-
-```rust
-// Extend instance storage to live for at least 100,000 ledgers (~5 days)
-env.storage().instance().extend_ttl(
-    50_000,    // minimum threshold: only extend if TTL is below this
-    100_000,   // target: extend it up to this amount
-);
-```
-
-### Extending Persistent/Temporary Storage
-When a user interacts with their balance, bump their TTL so their funds don't get archived.
+Extend TTL when users interact with their data:
 
 ```rust
 let key = DataKey::Balance(user.clone());
-
-// Read balance
 let balance: i128 = env.storage().persistent().get(&key).unwrap_or(0);
 
-// Extend the TTL for THIS SPECIFIC user's balance entry
-env.storage().persistent().extend_ttl(
-    &key,
-    1_000_000, // min threshold (e.g. 2 months)
-    2_000_000, // target (e.g. 4 months)
-);
+env.storage().persistent().extend_ttl(&key, 1_000_000, 2_000_000);
 ```
 
-### Reading TTL
-You can check remaining TTL on persistent entries:
+Check before extending (avoids unnecessary writes):
+
 ```rust
-let ttl = env.storage().persistent().get_ttl(&key);
-let live_until = env.storage().persistent().get_live_until_ledger(&key);
-```
-For conditional extension (more efficient than unconditional):
-```rust
-const MIN_TTL: u32 = 5000;
-let current_ttl = env.storage().persistent().get_ttl(&key);
-if current_ttl < MIN_TTL {
-    env.storage().persistent().extend_ttl(&key, MIN_TTL, 100000);
+if env.storage().persistent().get_ttl(&key) < 5000 {
+    env.storage().persistent().extend_ttl(&key, 5000, 100_000);
 }
 ```
 
 ---
 
-## 5. Security & Best Practices
+## Edge cases
 
-1. **Avoid `Vec` for state:** If you catch yourself writing `let mut users: Vec<Address> = env.storage().instance().get...`, stop. Use `persistent().set(&DataKey::User(addr))` instead. If you need to iterate over all users off-chain, emit an Event or use an Indexer (Mercury/Zephyr), do not iterate on-chain.
-2. **Delete what you don't need:** If a user withdraws all funds, `remove()` their key from `persistent()` storage. State bloat increases fees.
-3. **Always unwrap safely:** Never use `.unwrap()` on storage keys blindly. Always use `.unwrap_or(default_value)` or `if let Some(val) = ...`. An unhandled unwrap on a missing key will panic and crash the transaction.
+| Situation | Result |
+|-----------|--------|
+| All instance keys archived | Contract becomes uncallable until restored |
+| `unwrap()` on missing key | Transaction panics and fails |
+| Store unbounded `Vec` in instance | Memory limit exceeded on load |
+| Forget to extend persistent TTL | User data archives, becomes unreadable |
+| Remove key then read it | Returns `None` — handle with `unwrap_or(default)` |
 
 ---
 
-## Official documentation
+## Common errors
 
-- Storing data (Soroban): https://developers.stellar.org/docs/build/smart-contracts/getting-started/storing-data  
-- soroban-sdk storage API: https://docs.rs/soroban-sdk/latest/soroban_sdk/storage/struct.Persistent.html  
+| Error | Cause | Fix |
+|-------|-------|-----|
+| Memory limit exceeded | Loading large `Vec`/`Map` from storage | Use per-key persistent storage instead |
+| `contract_instance_not_found` | Instance TTL expired | Submit `RestoreFootprint` + extend TTL |
+| Transaction panics on `.unwrap()` | Missing key not handled | Use `unwrap_or(default)` or `if let Some(val)` |
+| State bloat / high fees | Never removing stale entries | Call `remove()` on zero-balance or expired data |
+
+---
+
+## See also
+
+- [Storing data — Soroban docs](https://developers.stellar.org/docs/build/smart-contracts/getting-started/storing-data)
+- [soroban-sdk storage API](https://docs.rs/soroban-sdk/latest/soroban_sdk/storage/struct.Persistent.html)
+- [Resource limits & fees](https://developers.stellar.org/docs/networks/resource-limits-fees)
 
 ---
 
