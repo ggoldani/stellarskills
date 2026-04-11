@@ -69,7 +69,6 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 |------|-------|
 | SDKs, wallets, explorers, Stellar Lab, CLI | `raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md` |
 | Frontend integration — Freighter, SEP-10 auth, browser SDK | `raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md` |
-| Local development node (Quickstart Docker, sandbox) | `raw.githubusercontent.com/ggoldani/stellarskills/main/local-node/SKILL.md` |
 | Data indexers (Mercury, Hubble, SubQuery) | `raw.githubusercontent.com/ggoldani/stellarskills/main/data-indexers/SKILL.md` |
 | Scaffold Stellar — full-stack dApp scaffolding | `raw.githubusercontent.com/ggoldani/stellarskills/main/scaffold-stellar/SKILL.md` |
 | x402 HTTP micropayments on Stellar (`@x402/stellar`, facilitator) | `raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md` |
