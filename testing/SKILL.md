@@ -215,7 +215,7 @@ For JS/TS E2E scripts simulating frontend interactions, use `@stellar/stellar-sd
 
 ## See also
 
-- Official docs: [Soroban testing](https://developers.stellar.org/docs/build/smart-contracts/testing)
+- Official docs: [Soroban smart contracts](https://developers.stellar.org/docs/build/smart-contracts)
 - [Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers)
 - [Network resource limits & fees](https://developers.stellar.org/docs/networks/resource-limits-fees)
 

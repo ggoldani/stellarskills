@@ -161,7 +161,7 @@ const sendResponse = await rpcServer.sendTransaction(signedTx);
 Freighter-only integration without Wallets Kit.
 
 ```bash
-npm install @stellar/freighter-api  # verify: https://github.com/stellar/freighter-api/releases
+npm install @stellar/freighter-api  # verify: https://www.npmjs.com/package/@stellar/freighter-api
 ```
 
 ```javascript

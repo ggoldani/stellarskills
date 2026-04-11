@@ -148,7 +148,7 @@ Full list: https://developers.stellar.org/docs/data/apis/rpc/providers
 
 ## Scaffold Stellar
 
-Reference for bootstrapping Soroban projects with frontend + contracts: https://github.com/stellar/scaffold-stellar
+Reference for bootstrapping Soroban projects with frontend + contracts: npx create-scaffold-stellar (npm package)
 
 ---
 
