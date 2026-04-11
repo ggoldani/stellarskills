@@ -1,11 +1,11 @@
 ---
 name: stellarskills-accounts
-description: Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts.
+description: Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts, smart wallets.
 ---
 
 # STELLARSKILLS — Accounts
 
-> Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts.
+> Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts, smart wallets.
 
 ---
 
@@ -118,6 +118,38 @@ Set on the **issuing account** via `setOptions`. Control how the issued asset be
 | `AUTH_CLAWBACK_ENABLED` | Issuer can claw back tokens from holders |
 
 These apply to asset issuers only. Regular accounts use signers and thresholds (see below).
+
+---
+
+## Smart Wallets
+
+**Smart wallets** are contract accounts (C...) that act as user wallets. Instead of a single secret key (S...), they enforce authorization via a `__check_auth` function — enabling programmable policies like spend limits, allow lists, and timelocks.
+
+### Passkeys (WebAuthn)
+
+The most common smart wallet pattern uses **passkeys** (Touch ID, Face ID, hardware keys) instead of seed phrases.
+
+- Passkeys use **secp256r1** (P-256) keys — natively verified on-chain since Protocol 21
+- No browser extension or seed phrase required
+- Registration: WebAuthn creates device keypair, public key stored in contract state
+- Signing: WebAuthn assertion returns a signature, verified in `__check_auth`
+
+### Key tools
+
+| Tool | Purpose |
+|------|---------|
+| [Passkey Kit](https://github.com/kalepail/passkey-kit) | TypeScript SDK for passkey-based smart wallets |
+| [Smart Account Kit](https://github.com/OpenZeppelin/stellar-contracts) | OZ smart wallet with programmable policies |
+| [Launchtube](https://github.com/stellar/launchtube) | Relay for submitting txs and handling fees (like EVM Paymaster) |
+
+### When to use
+
+- You want passwordless UX (biometrics, no seed phrases)
+- You need programmable auth (limits, multi-factor, session keys)
+- You want flexible signer mixes: passkeys + Ed25519 + policy signers
+
+→ `/smart-accounts/SKILL.md` — full smart account deployment, policies, session keys
+→ [Smart Wallets guide](https://developers.stellar.org/docs/build/guides/contract-accounts/smart-wallets)
 
 ---
 

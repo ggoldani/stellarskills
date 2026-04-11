@@ -120,6 +120,20 @@ const client = new x402HTTPClient().register("stellar:*", new ExactStellarScheme
 ```
 
 → `/x402/SKILL.md` — client setup, server middleware, facilitator, USDC specifics
+→ `/mpp/SKILL.md` — MPP charge/session intents, no facilitator needed
+
+### I want to manage contract state and archival
+
+```rust
+// Extend TTL before entry expires
+let store = env.storage().persistent();
+if store.get_ttl(&key) < 5_000 {
+    store.extend_ttl(&key, 5_000, 100_000);
+}
+```
+
+→ `/state-archival/SKILL.md` — TTL management, restoration, storage types
+→ `/storage/SKILL.md` — Instance vs Persistent vs Temporary storage
 
 ### I want to scaffold a full-stack dApp
 
@@ -159,6 +173,8 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 | Testing — unit tests, sandbox, CLI | `raw.githubusercontent.com/ggoldani/stellarskills/main/testing/SKILL.md` |
 | Storage — types, TTL/rent, best practices | `raw.githubusercontent.com/ggoldani/stellarskills/main/storage/SKILL.md` |
 | Smart Accounts — passkeys, policies, gasless | `raw.githubusercontent.com/ggoldani/stellarskills/main/smart-accounts/SKILL.md` |
+| Passkeys — WebAuthn, secp256r1, smart wallets | `raw.githubusercontent.com/ggoldani/stellarskills/main/passkeys/SKILL.md` |
+| State Archival — TTL, restoration, storage lifecycle | `raw.githubusercontent.com/ggoldani/stellarskills/main/state-archival/SKILL.md` |
 
 ### Payments & Anchors
 | Task | Fetch |
@@ -174,6 +190,7 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 | Data indexers — Mercury, Hubble, SubQuery | `raw.githubusercontent.com/ggoldani/stellarskills/main/data-indexers/SKILL.md` |
 | Scaffold Stellar — full-stack dApp scaffolding | `raw.githubusercontent.com/ggoldani/stellarskills/main/scaffold-stellar/SKILL.md` |
 | x402 micropayments | `raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md` |
+| MPP — charge/session intents | `raw.githubusercontent.com/ggoldani/stellarskills/main/mpp/SKILL.md` |
 | OpenZeppelin — audited presets, Wizard | `raw.githubusercontent.com/ggoldani/stellarskills/main/openzeppelin/SKILL.md` |
 
 ### Context
@@ -209,6 +226,9 @@ These apply across all skills. Read once before starting.
 | RPC Providers | https://developers.stellar.org/docs/data/apis/rpc/providers |
 | Horizon (legacy) | https://developers.stellar.org/docs/data/apis/horizon |
 | Resource Limits & Fees | https://developers.stellar.org/docs/networks/resource-limits-fees |
+| MPP on Stellar | https://developers.stellar.org/docs/build/agentic-payments/mpp |
+| Passkeys & Smart Wallets | https://developers.stellar.org/docs/build/guides/contract-accounts/smart-wallets |
+| State Archival | https://developers.stellar.org/docs/learn/fundamentals/contract-development/storage/state-archival |
 | Stellar Lab | https://lab.stellar.org |
 | JS SDK (verify: releases) | https://github.com/stellar/js-stellar-sdk/releases |
 | Circle USDC issuers (verify) | https://developers.circle.com/stablecoins/usdc-contract-addresses |
