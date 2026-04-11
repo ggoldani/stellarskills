@@ -5,93 +5,137 @@ description: HTTP 402 micropayments on Stellar via x402 — Soroban token transf
 
 # STELLARSKILLS — x402 on Stellar
 
-> Pay-per-request APIs using HTTP **402 Payment Required** on Stellar. The Stellar flow uses **Soroban / SEP-41-style token transfers**, **authorization entry signing** (see SEP-43), and often a **facilitator** — it is **not** identical to x402 on Base/EVM.
+> Pay-per-request APIs using HTTP **402 Payment Required** on Stellar. Uses Soroban token transfers, authorization entry signing, and a facilitator — **not** identical to EVM/Base x402.
 
 ---
 
-## Official documentation (always verify current APIs)
+## When to use
 
-- **x402 on Stellar:** https://developers.stellar.org/docs/build/agentic-payments/x402  
-- **Built on Stellar facilitator:** https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar  
-- **Stellar x402 repository:** https://github.com/stellar/x402-stellar  
-- **Protocol spec:** https://x402.org  
-- **npm (Stellar implementation):** https://www.npmjs.com/package/@x402/stellar  
-
----
-
-## 1. How Stellar x402 differs from EVM
-
-Per the [`@x402/stellar`](https://www.npmjs.com/package/@x402/stellar) package and Stellar docs:
-
-- **Ledger-based expiration** (not only wall-clock timestamps) for payment payloads.
-- **Auth entry signing** — the client typically signs **authorization entries**; a **facilitator** verifies and may **rebuild and submit** the on-chain transaction (contrast with “sign full legacy payment tx”-only mental models).
-- **Default asset** is often **USDC** as a Soroban token (**7 decimals** on Stellar in the default helpers — confirm in your integration).
-- **Mainnet** requires a **configured RPC URL** from a provider listed under **[Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers)**. Testnet can use a provider URL or the SDF public testnet host — see `@x402/stellar` and the official x402 docs.
+- Building or consuming pay-per-request APIs on Stellar
+- Integrating micropayments into HTTP services (USDC, Soroban tokens)
+- Setting up a facilitator for automatic payment settlement
+- Implementing x402 server middleware (Express, custom HTTP)
 
 ---
 
-## 2. Packages
+## Quick reference
+
+| Component | Package / Purpose |
+|-----------|-------------------|
+| `@x402/stellar` | Core Stellar x402 logic (signer, scheme, USDC helpers) |
+| `@x402/core` | Shared x402 protocol types and utilities |
+| `@x402/fetch` | HTTP client wrapper with auto-payment retry |
+| `@x402/express` | Express middleware for automatic 402 negotiation |
+| `createEd25519Signer` | Creates signer from secret key + CAIP-2 network ID |
+| `ExactStellarScheme` | Client payment scheme registration |
+| `paymentMiddlewareFromConfig` | Server-side Express 402 middleware factory |
+
+---
+
+## Client setup
 
 ```bash
-npm install @x402/stellar @x402/core
+npm install @x402/stellar @x402/core @x402/fetch
 ```
-
-Optional HTTP client wrapper: `@x402/fetch` (see x402 monorepo / package docs).
-
-Do **not** use obsolete package names such as `stellar-x402` for the current Stellar-native stack.
-
----
-
-## 3. High-level flow
-
-1. Client calls a protected HTTP resource.
-2. Server responds with **402** and **payment requirements** (machine-readable).
-3. Client uses **`@x402/stellar`** (with a signer, e.g. `createEd25519Signer`) to satisfy requirements — including signing **auth entries** as required by the Stellar scheme.
-4. Client retries with the **`X-PAYMENT`** (or protocol-specified) header.
-5. **Facilitator** (e.g. production setups described under **Built on Stellar**) validates and settles on-chain; server returns the resource.
-
-For exact TypeScript patterns (`x402Client`, `ExactStellarScheme`, server/facilitator registration), follow **the current Stellar docs and the `@x402/stellar` README** — they evolve quickly.
-
----
-
-## 4. Minimal client pattern (illustrative)
 
 ```typescript
 import { x402HTTPClient } from "@x402/fetch";
 import { createEd25519Signer } from "@x402/stellar";
 import { ExactStellarScheme } from "@x402/stellar/exact/client";
 
-const signer = createEd25519Signer(process.env.STELLAR_SECRET_KEY!, "stellar:testnet");
-const client = new x402HTTPClient().register("stellar:*", new ExactStellarScheme(signer));
-// Use client + @x402/fetch or your HTTP layer per official examples.
+const signer = createEd25519Signer(
+  process.env.STELLAR_SECRET_KEY!, "stellar:testnet"
+);
+const client = new x402HTTPClient()
+  .register("stellar:*", new ExactStellarScheme(signer));
+
+const res = await client.get("https://api.example.com/premium");
+// Client auto-negotiates 402 → signs auth entries → retries with payment
 ```
 
-Use **`stellar:pubnet`** / **`stellar:testnet`** (CAIP-2 style identifiers) and pass a **custom RPC URL** on mainnet as required.
-
-**Server middleware:** For Express apps, use `@x402/express` with `paymentMiddlewareFromConfig` for automatic 402 negotiation.
+For mainnet, use `"stellar:pubnet"` and provide a custom RPC URL (see Edge cases).
 
 ---
 
-## 5. USDC on Stellar (Circle issuers)
+## Server middleware (Express)
 
-Always verify on [Circle USDC contract addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses):
+```bash
+npm install @x402/express @x402/stellar
+```
 
-| Network | Issuer (classic `G…` account) |
-|---------|------------------------------|
-| **Public mainnet** | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
-| **Testnet** | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+```typescript
+import { paymentMiddlewareFromConfig } from "@x402/express";
 
-x402 on Stellar often uses the **token contract** / SEP-41 interface — use package helpers such as `getUsdcAddress(network)` from `@x402/stellar` where available.
+app.use(paymentMiddlewareFromConfig({
+  scheme: "exact",        // or "pay-to-mint"
+  asset: "USDC",
+  amount: "100",          // stroops (7 decimals)
+  destination: "G...",    // your receiving public key
+}));
+```
+
+Protected routes return **402 + payment requirements** when no valid `X-PAYMENT` header is present. After the client satisfies payment, the middleware validates and passes the request through.
 
 ---
 
-## 6. Facilitator & production (Built on Stellar)
+## Facilitator concept
 
-For production, use the **Built on Stellar** facilitator flow documented here (includes integration with the **OpenZeppelin Relayer** for relaying transactions):
+The **facilitator** validates off-chain payment proofs and submits on-chain settlement transactions. In production, the Built on Stellar facilitator integrates with OpenZeppelin Relayer for transaction relay.
 
-https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar  
+Flow: client signs auth entries → facilitator receives proof → facilitator builds and submits Soroban tx → server delivers resource.
 
-Also see the launch post: https://stellar.org/blog/foundation-news/x402-on-stellar  
+### Key distinction from EVM x402
+
+| Aspect | Stellar x402 | EVM/Base x402 |
+|--------|-------------|---------------|
+| Payment settlement | Soroban smart contract invocation | On-chain EVM tx (paymaster/sponsor) |
+| Expiration | Ledger-based + wall-clock | Wall-clock timestamps only |
+| Client signing | Auth entry signing (SEP-43 style) | Full payment transaction or ERC-4337 userOp |
+| Default asset | USDC (Soroban token, 7 decimals) | USDC (ERC-20, 6 decimals) |
+
+---
+
+## USDC issuers
+
+Always verify at [Circle USDC contract addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses):
+
+| Network | Issuer account |
+|---------|---------------|
+| Mainnet | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+| Testnet | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+
+x402 uses the Soroban token contract (SEP-41 interface). Use `getUsdcAddress(network)` from `@x402/stellar` where available.
+
+---
+
+## Edge cases
+
+| Situation | Detail |
+|-----------|--------|
+| Mainnet RPC required | Must configure RPC URL from a [listed provider](https://developers.stellar.org/docs/data/apis/rpc/providers); no public default |
+| USDC decimals | 7 on Stellar (not 6 like EVM USDC) — amount in stroops |
+| Ledger-based expiry | Payment payloads expire by ledger, not just wall-clock — may expire before timeout if network is slow |
+| Auth entry vs full tx | Client signs auth entries, not the full settlement tx — facilitator assembles and submits |
+| Token contract vs classic | x402 uses Soroban token contract (C...), not classic trustline asset — trustline setup not needed |
+
+---
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| Missing RPC URL on mainnet | No default RPC provider configured | Pass RPC URL to scheme/facilitator config |
+| Invalid `X-PAYMENT` header | Payment payload expired or malformed signature | Client must re-sign with fresh auth entries |
+| Wrong network ID | Used `"stellar:testnet"` on mainnet or vice versa | Match CAIP-2 ID to target network |
+| USDC amount mismatch | Treated EVM 6-decimal amount as Stellar 7-decimal | Use stroops (7 decimals); 1 USDC = 10_000_000 |
+
+---
+
+## See also
+
+- Official docs: [x402 on Stellar](https://developers.stellar.org/docs/build/agentic-payments/x402)
+- [x402 protocol spec](https://x402.org)
+- Built on Stellar facilitator: [developers.stellar.org](https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar)
 
 ---
 
