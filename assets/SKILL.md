@@ -9,140 +9,128 @@ description: Custom asset issuance, trustlines, asset types, Stellar Asset Contr
 
 ---
 
-## Asset Types
+## When to use
 
-Stellar has three asset types:
+- Issuing a custom token or creating an asset issuer
+- Setting up trustlines to receive non-XLM assets
+- Working with USDC, EURC, or other stablecoins on Stellar
+- Using a classic asset inside a Soroban contract (SAC)
+- Building path payments (cross-asset swaps via DEX)
+
+---
+
+## Quick reference
+
+| Operation | Key detail |
+|-----------|------------|
+| Create asset | `new Asset("CODE", issuerPublicKey)` — code 4 or 12 chars |
+| Native XLM | `Asset.native()` |
+| Trustline | `Operation.changeTrust({asset, limit})` — costs 0.5 XLM reserve |
+| Remove trustline | `changeTrust({asset, limit: "0"})` — balance must be zero |
+| Check trustline | `account.balances.find(b => b.asset_code === "CODE")` |
+| Mint tokens | Issuer sends asset to a trustline holder |
+| Burn tokens | Send asset back to the issuer |
+| Lock issuer | `setOptions({masterWeight: 0})` — permanent, no more minting |
+| SAC contract ID | `asset.contractId(Networks.MAINNET)` → `C...` |
+| SAC transfer (Rust) | `token::Client::new(&env, &id).transfer(&from, &to, &amt)` |
+| Path payment | `pathPaymentStrictReceive` / `pathPaymentStrictSend` — auto DEX routing |
+| Freeze trustline | `setTrustLineFlags({trustor, asset, flags: {authorized: false}})` |
+| Clawback | `Operation.clawback({asset, from, amount})` |
+| Issuer flags | `setOptions({setFlags})` — AUTH_REQUIRED, AUTH_REVOCABLE, AUTH_CLAWBACK_ENABLED |
+| stellar.toml | `https://domain.com/.well-known/stellar.toml` — asset discovery |
+
+---
+
+## Asset types
 
 | Type | Description | Example |
 |------|-------------|---------|
-| `native` | XLM, the protocol's native asset | `Asset.native()` |
-| `credit_alphanum4` | Asset code up to 4 characters | `USD`, `BTC`, `BRL` |
-| `credit_alphanum12` | Asset code up to 12 characters | `USDC`, `yXLM`, `EURC` |
+| `native` | XLM | `Asset.native()` |
+| `credit_alphanum4` | Code up to 4 chars | `USD`, `BTC`, `BRL` |
+| `credit_alphanum12` | Code up to 12 chars | `USDC`, `yXLM`, `EURC` |
 
-All non-native assets are identified by **code + issuer**:
+Non-native assets = **code + issuer**. Same code, different issuer = different asset. Always verify issuer address.
+
 ```javascript
 import { Asset } from "@stellar/stellar-sdk";
 
-// Circle USDC — verify anytime: https://developers.circle.com/stablecoins/usdc-contract-addresses
 const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+// verify: https://developers.circle.com/stablecoins/usdc-contract-addresses
 const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
 
 const XLM = Asset.native();
 const USDC_MAINNET = new Asset("USDC", USDC_ISSUER_MAINNET);
-const USDC_TESTNET = new Asset("USDC", USDC_ISSUER_TESTNET);
-// Example BRL on mainnet (historical issuer — verify issuer + anchor are still active before use)
-const BRL  = new Asset("BRL",  "GDVKY2GU2DRXWTBEYJJWSFXIGBZV6AZNBVVSUHEPZI54LIS6BA7DVVSP");
 ```
-
-**Two assets with the same code but different issuers are DIFFERENT assets.** Always verify the issuer address. Do not trust an asset code alone. **Fiat-backed / anchor assets:** corridors and issuers **change or sunset** — confirm `stellar.toml`, the anchor’s docs, and an explorer **at integration time**; never treat table rows as permanent.
 
 ---
 
-## Canonical stablecoins (verify before production)
+## Stablecoins (verify before production)
 
-**USDC (Circle)** — official list: https://developers.circle.com/stablecoins/usdc-contract-addresses
+| Asset | Network | Issuer |
+|-------|---------|--------|
+| USDC | Mainnet | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+| USDC | Testnet | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+| EURC | Mainnet | `GDHU6WRG4IEQXM5NZ4BMPKOXHW76MZM4Y2IEMFDVXBSDP6SJY4ITNPP` |
+| USDT | Mainnet | `GCQTGZQQ5G4PTM2GL7CDIFKUBIPEC52BROAQIAPW53XBRJVN6ZJVTG6V` |
 
-| Network | Asset | Issuer |
-|---------|-------|--------|
-| **Public mainnet** | USDC | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
-| **Testnet** | USDC | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
-
-**Other mainnet examples** (confirm with issuer / explorer):
-
-| Asset | Issuer (mainnet) |
-|-------|------------------|
-| EURC (Circle) | `GDHU6WRG4IEQXM5NZ4BMPKOXHW76MZM4Y2IEMFDVXBSDP6SJY4ITNPP` |
-| USDT (Tether) | `GCQTGZQQ5G4PTM2GL7CDIFKUBIPEC52BROAQIAPW53XBRJVN6ZJVTG6V` |
-
-**Official Stellar docs:** https://developers.stellar.org/docs — tokens / assets sections for SAC and anatomy of an asset.
+Source: https://developers.circle.com/stablecoins/usdc-contract-addresses
 
 ---
 
 ## Trustlines
 
-> Examples below use **Horizon** (`Horizon.Server`) for sequence load and submit. Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations — use [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) + [migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) for new work.
+Account must have a trustline before receiving any non-native asset. Costs 0.5 XLM reserve.
 
-**Before an account can receive any non-native asset, it must have a trustline to that asset.**
-
-A trustline is a subentry (costs 0.5 XLM in minimum balance reserve) that says "this account trusts and can hold this asset."
-
-### Create a trustline (changeTrust)
 ```javascript
-import { TransactionBuilder, Networks, Operation, Asset, BASE_FEE, Keypair } from "@stellar/stellar-sdk";
-import { Horizon } from "@stellar/stellar-sdk";
-
-const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+import { TransactionBuilder, Networks, Operation, Asset, BASE_FEE, Keypair, Horizon } from "@stellar/stellar-sdk";
 
 const server = new Horizon.Server("https://horizon.stellar.org");
-const keypair = Keypair.fromSecret(process.env.SECRET);
-const account = await server.loadAccount(keypair.publicKey());
+const kp = Keypair.fromSecret(process.env.SECRET);
+const account = await server.loadAccount(kp.publicKey());
 
-const USDC = new Asset("USDC", USDC_ISSUER_MAINNET);
-
-const tx = new TransactionBuilder(account, {
-  fee: BASE_FEE,
-  networkPassphrase: Networks.MAINNET,
-})
-  .addOperation(
-    Operation.changeTrust({
-      asset: USDC,
-      limit: "1000000",  // maximum this account can hold; "0" to remove trustline
-    })
-  )
+const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.MAINNET })
+  .addOperation(Operation.changeTrust({
+    asset: new Asset("USDC", "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"),
+    limit: "1000000",
+  }))
   .setTimeout(30)
   .build();
-
-tx.sign(keypair);
+tx.sign(kp);
 await server.submitTransaction(tx);
 ```
 
-### Remove a trustline
-Set `limit: "0"` — but only when balance is zero.
+Remove trustline: `changeTrust` with `limit: "0"` — balance must be zero.
 
-### Check if trustline exists
 ```javascript
-const account = await server.loadAccount(publicKey);
-const issuer = USDC_ISSUER_MAINNET; // or USDC_ISSUER_TESTNET on testnet
 const hasTrustline = account.balances.some(
-  b => b.asset_code === "USDC" && b.asset_issuer === issuer
+  b => b.asset_code === "USDC" && b.asset_issuer === USDC_ISSUER_MAINNET
 );
 ```
 
 ---
 
-## Issuing a Custom Asset
+## Issuing a custom asset
 
-### Step 1: Create an issuer keypair
-The issuing account is the source of truth for the asset. Its public key becomes part of the asset identity. **Never lose the issuing keypair.**
+Distributor pattern: issuer mints, distributor distributes. Never use issuer directly for payments.
 
 ```javascript
-const issuerKeypair = Keypair.random();
-const distributorKeypair = Keypair.random();
-// Best practice: use a separate distributor account, not the issuer directly
-```
-
-### Step 2: Fund both accounts
-Both must exist on-chain (minimum balance funded).
-
-### Step 3: Distributor establishes trustline to issuer
-```javascript
-// Distributor creates trustline
-const tx = new TransactionBuilder(distributorAccount, { fee: BASE_FEE, networkPassphrase: Networks.MAINNET })
+// Distributor creates trustline to issuer's asset
+const tx = new TransactionBuilder(distAccount, { fee: BASE_FEE, networkPassphrase: Networks.MAINNET })
   .addOperation(Operation.changeTrust({
     asset: new Asset("MYTOKEN", issuerKeypair.publicKey()),
     limit: "1000000000",
   }))
   .setTimeout(30)
   .build();
-tx.sign(distributorKeypair);
+tx.sign(distKeypair);
 await server.submitTransaction(tx);
 ```
 
-### Step 4: Issuer sends tokens to distributor (minting)
 ```javascript
+// Issuer mints by sending to distributor
 const tx = new TransactionBuilder(issuerAccount, { fee: BASE_FEE, networkPassphrase: Networks.MAINNET })
   .addOperation(Operation.payment({
-    destination: distributorKeypair.publicKey(),
+    destination: distKeypair.publicKey(),
     asset: new Asset("MYTOKEN", issuerKeypair.publicKey()),
     amount: "1000000",
   }))
@@ -152,97 +140,83 @@ tx.sign(issuerKeypair);
 await server.submitTransaction(tx);
 ```
 
-**Any payment FROM the issuer to an account with a trustline mints tokens. Any payment TO the issuer burns tokens.**
-
-### Step 5: Lock the issuer (optional, for fixed supply)
-```javascript
-// Set master weight to 0 — issuer can never sign again
-Operation.setOptions({ masterWeight: 0 });
-```
+Lock issuer (fixed supply): `Operation.setOptions({ masterWeight: 0 })`.
 
 ---
 
-## Asset Flags (Issuer Controls)
+## Asset flags
 
-Set these on the **issuer account** via `setOptions`:
+Set on **issuer account** via `setOptions`. For detailed flag config see `accounts/SKILL.md`.
+
+| Flag | Effect |
+|------|--------|
+| `AUTH_REQUIRED` | Holders need issuer authorization |
+| `AUTH_REVOCABLE` | Issuer can freeze trustlines |
+| `AUTH_IMMUTABLE` | Flags permanently locked |
+| `AUTH_CLAWBACK_ENABLED` | Issuer can claw back tokens |
 
 ```javascript
-Operation.setOptions({
-  setFlags: 0b0111,  // AUTH_REQUIRED | AUTH_REVOCABLE | AUTH_CLAWBACK_ENABLED
-});
+Operation.setOptions({ setFlags: 0b0111 });
+// AUTH_REQUIRED | AUTH_REVOCABLE | AUTH_CLAWBACK_ENABLED
 ```
 
-| Flag Name | Bit | Effect |
-|-----------|-----|--------|
-| `AUTH_REQUIRED` | 0x1 | Holders need explicit authorization from issuer |
-| `AUTH_REVOCABLE` | 0x2 | Issuer can freeze individual trustlines |
-| `AUTH_IMMUTABLE` | 0x4 | No more flag changes (permanent) |
-| `AUTH_CLAWBACK_ENABLED` | 0x8 | Issuer can claw back tokens from any account |
-
-### Authorize a trustline (when AUTH_REQUIRED is set)
-```javascript
-Operation.setTrustLineFlags({
-  trustor: userPublicKey,
-  asset: myAsset,
-  flags: { authorized: true },
-});
-```
-
-### Freeze a trustline
-```javascript
-Operation.setTrustLineFlags({
-  trustor: userPublicKey,
-  asset: myAsset,
-  flags: { authorized: false },  // freezes — user can't send or receive
-});
-```
-
-### Clawback
-```javascript
-Operation.clawback({
-  asset: myAsset,
-  from: userPublicKey,
-  amount: "100",
-});
-```
+Authorize: `Operation.setTrustLineFlags({trustor, asset, flags: {authorized: true}})`
+Freeze: `Operation.setTrustLineFlags({trustor, asset, flags: {authorized: false}})`
+Clawback: `Operation.clawback({asset, from, amount})`
 
 ---
 
 ## Stellar Asset Contract (SAC)
 
-Every Stellar asset automatically has a **Soroban-compatible contract** called the Stellar Asset Contract (SAC). This allows classic assets (XLM, USDC, custom tokens) to be used inside Soroban smart contracts as if they were ERC-20 tokens.
+Every classic asset has an automatic Soroban contract (ERC-20-like). Use `contractId()` to get the address.
 
-### Get SAC contract ID for an asset
 ```javascript
-import { Contract, Networks } from "@stellar/stellar-sdk";
+import { Asset, Networks } from "@stellar/stellar-sdk";
 
 const usdcSAC = new Asset("USDC", USDC_ISSUER_MAINNET).contractId(Networks.MAINNET);
-// Testnet: new Asset("USDC", USDC_ISSUER_TESTNET).contractId(Networks.TESTNET)
-
-console.log(usdcSAC);  // C... contract address
+console.log(usdcSAC);  // C...
 ```
 
-### Using SAC in Soroban contracts (Rust)
 ```rust
 use soroban_sdk::{token, Address, Env};
 
-// Transfer USDC using SAC
 let usdc_client = token::Client::new(&env, &usdc_contract_id);
-usdc_client.transfer(&from_address, &to_address, &amount);
-
-// Check balance
+usdc_client.transfer(&from, &to, &amount);
 let balance = usdc_client.balance(&address);
 ```
 
-SAC supports: `transfer`, `transfer_from`, `approve`, `allowance`, `balance`, `mint` (issuer only), `burn`.
+SAC supports: `transfer`, `transfer_from`, `approve`, `allowance`, `balance`, `mint` (issuer), `burn`.
 
 ---
 
-## stellar.toml — Asset Discovery
+## Path payments
 
-Issuers publish a `stellar.toml` file at `https://yourdomain.com/.well-known/stellar.toml` that describes their assets. Wallets and explorers use this for display names, logos, and metadata.
+Stellar DEX converts assets in one transaction. Send USDC → receive BRL.
 
-Minimal example:
+```javascript
+// Exact destination amount (variable source)
+Operation.pathPaymentStrictReceive({
+  sendAsset: USDC, sendMax: "110",
+  destination: recipientPubKey,
+  destAsset: BRL, destAmount: "100",
+  path: [],
+});
+
+// Exact source amount (variable destination)
+Operation.pathPaymentStrictSend({
+  sendAsset: USDC, sendAmount: "100",
+  destination: recipientPubKey,
+  destAsset: BRL, destMin: "90",
+  path: [],
+});
+```
+
+---
+
+## stellar.toml
+
+Issuers publish at `https://domain.com/.well-known/stellar.toml` for wallet/explorer discovery.
+
 ```toml
 NETWORK_PASSPHRASE="Public Global Stellar Network ; September 2015"
 ACCOUNTS=["GISSUER..."]
@@ -252,67 +226,43 @@ code="MYTOKEN"
 issuer="GISSUER..."
 display_decimals=2
 name="My Token"
-desc="A description of the token"
-image="https://yourdomain.com/logo.png"
-is_asset_anchored=false
 ```
 
-**Home domain** must be set on the issuer account:
-```javascript
-Operation.setOptions({
-  homeDomain: "yourdomain.com",
-});
-```
+Set home domain on issuer: `Operation.setOptions({ homeDomain: "yourdomain.com" })`
 
 ---
 
-## Path Payments (Cross-Asset)
+## Edge cases
 
-Stellar can automatically convert assets in a single transaction using the DEX. Send USDC, recipient receives BRL — Stellar finds the path.
-
-```javascript
-// Send exactly X of destination asset (variable source amount)
-Operation.pathPaymentStrictReceive({
-  sendAsset: USDC,
-  sendMax: "110",       // max USDC to spend
-  destination: recipientPublicKey,
-  destAsset: BRL,
-  destAmount: "100",    // exact BRL recipient gets
-  path: [],             // [] lets Stellar find the path automatically
-});
-
-// Send exactly X of source asset (variable destination amount)
-Operation.pathPaymentStrictSend({
-  sendAsset: USDC,
-  sendAmount: "100",    // exact USDC to spend
-  destination: recipientPublicKey,
-  destAsset: BRL,
-  destMin: "90",        // minimum BRL to receive (slippage protection)
-  path: [],
-});
-```
+| Situation | What happens |
+|-----------|-------------|
+| Receive non-native asset without trustline | `op_no_trust` — tx rejected |
+| Remove trustline with non-zero balance | Fails — must transfer/sell balance first |
+| Send asset to self | `op_self_not_allowed` — use different destination |
+| Issuer master weight set to 0 | Permanent — no more minting, no flag changes |
+| Same asset code, different issuer | Different assets — verify issuer address always |
+| Fiat-backed anchor sunsets asset | Tokens may become unrecoverable — verify issuer active |
 
 ---
 
-## Common Errors
+## Common errors
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `op_no_trust` | Destination has no trustline | Establish trustline first |
-| `op_not_authorized` | Asset is AUTH_REQUIRED and not authorized | Issuer must authorize trustline |
-| `op_line_full` | Would exceed trustline limit | Increase limit via changeTrust |
-| `op_low_reserve` | Not enough XLM for trustline reserve | Add 0.5 XLM per trustline |
-| `op_self_not_allowed` | Sending to self | Use a different destination |
+| `op_no_trust` | Recipient has no trustline | `changeTrust` first |
+| `op_not_authorized` | Issuer has AUTH_REQUIRED, holder not authorized | Issuer calls `setTrustLineFlags` |
+| `op_line_full` | Would exceed trustline limit | Increase limit via `changeTrust` |
+| `op_low_reserve` | Not enough XLM for trustline reserve | Fund +0.5 XLM per trustline |
+| `op_self_not_allowed` | Sending asset to self | Use different destination |
+| `tx_bad_seq` | Wrong or reused sequence | Re-fetch account before building tx |
 
 ---
 
-## Official documentation
+## See also
 
-- Stellar docs: https://developers.stellar.org/docs  
-- Assets (data structures): https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/assets  
-- Stellar Asset Contract: https://developers.stellar.org/docs/tokens/stellar-asset-contract  
-- Circle USDC addresses (mainnet + testnet issuers): https://developers.circle.com/stablecoins/usdc-contract-addresses  
-- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
+- `/accounts/SKILL.md` — issuer flags, multisig, minimum balance, account creation
+- `/security/SKILL.md` — `require_auth()` for contract accounts (C...)
+- [Stellar Asset Contract](https://developers.stellar.org/docs/tokens/stellar-asset-contract)
 
 ---
 

@@ -1,233 +1,201 @@
 ---
 name: stellarskills-rpc
-description: Stellar RPC (JSON-RPC) for Soroban smart contracts — simulation, invocation, ledger state, events. Official successor naming for Soroban RPC.
+description: Stellar RPC (JSON-RPC) for Soroban smart contracts — simulation, invocation, ledger state, events.
 ---
 
 # STELLARSKILLS — Stellar RPC
 
-> **Stellar RPC** is the supported JSON-RPC API for the Stellar network’s smart-contract layer (Soroban). It was previously referred to as “Soroban RPC”; tooling may still expose `SorobanRpc` in the JS SDK. Official docs: https://developers.stellar.org/docs/data/apis/rpc
+> JSON-RPC 2.0 API for Soroban smart contracts. Separate from Horizon (legacy REST). Tooling may still expose `SorobanRpc` in the JS SDK.
 
 ---
 
-## What is Stellar RPC?
+## When to use
 
-Stellar RPC is the gateway to **Stellar smart contracts (Soroban)**. It is separate from **Horizon** (REST). Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations; see [migration from Horizon to RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc).
-
-| Horizon (REST, legacy) | Stellar RPC (JSON-RPC) |
-|------------------------|-------------------------|
-| Classic protocol (payments, offers, trustlines) | Smart contracts (Rust/WASM) |
-| REST API | JSON-RPC 2.0 |
-| `https://horizon.stellar.org` | Provider-specific JSON-RPC URL — see [Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers) |
-
-**Use Stellar RPC when you need to:**
-- Simulate a smart contract call
-- Submit a smart contract transaction (`InvokeHostFunction` operation)
-- Fetch contract state (storage)
-- Fetch contract events
-- Fetch recent ledger state for contract execution
+- Calling a Soroban smart contract (read or write)
+- Reading contract storage (ledger entries) without invoking
+- Fetching contract events for indexing or UI
+- Checking network health, fees, or ledger state
+- Any new integration — Horizon is legacy; use RPC for smart contracts
 
 ---
 
-## Endpoints
+## Quick reference
 
-**Official source of RPC URLs:** pick Testnet, Mainnet, or Futurenet from **[Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers)** (Blockdaemon, Validation Cloud, QuickNode, NowNodes, etc.).
+| Method | Purpose | Key params |
+|--------|---------|------------|
+| `getHealth` | Liveness check | — |
+| `getLatestLedger` | Current sequence + protocol version | — |
+| `getNetwork` | Network passphrase | — |
+| `getFeeStats` | Fee percentiles (p10–p99) | — |
+| `simulateTransaction` | Dry-run a tx, returns footprint + result | Transaction XDR |
+| `sendTransaction` | Submit signed transaction | Signed Transaction XDR |
+| `getTransaction` | Poll submitted tx status | Transaction hash |
+| `getLedgerEntries` | Fetch raw contract storage entries | LedgerKey array |
+| `getEvents` | Fetch historical contract events | startLedger, filters, limit |
 
-| Network | Typical approach | Notes |
-|---------|------------------|--------|
-| **Mainnet** | URL from a **provider** | Required for reliable production traffic; no single mandatory public URL. |
-| **Testnet** | Provider **or** SDF public host | SDF operates `https://soroban-testnet.stellar.org` for **development** (rate-limited); prefer a provider for CI/production-like tests. |
-| **Futurenet** | Provider **or** `https://rpc-futurenet.stellar.org` | Preview features before they reach testnet. |
+### Providers
+
+| Provider | URL | Notes |
+|----------|-----|-------|
+| SDF public (testnet) | `https://soroban-testnet.stellar.org` | Rate-limited, dev only |
+| Blockdaemon, QuickNode, etc. | See [providers list](https://developers.stellar.org/docs/data/apis/rpc/providers) | Mainnet requires a provider |
 
 ---
 
-## Setup JS SDK
+## Setup
 
 ```javascript
-import { SorobanRpc, Networks, Keypair, TransactionBuilder, Contract, BASE_FEE, nativeToScVal } from "@stellar/stellar-sdk";
+import {
+  SorobanRpc, Networks, Keypair, TransactionBuilder,
+  Contract, BASE_FEE, nativeToScVal, xdr,
+} from "@stellar/stellar-sdk";
 
-// Replace with your chosen RPC URL from https://developers.stellar.org/docs/data/apis/rpc/providers
+// verify: https://developers.stellar.org/docs/data/apis/rpc/providers
 const server = new SorobanRpc.Server("https://soroban-testnet.stellar.org");
 ```
 
 ---
 
-## The Contract Invocation Flow
+## Contract invocation flow
 
-Calling a Soroban smart contract is a 3-step process:
+Three steps: simulate → assemble → submit.
 
-1. **Simulate** — Ask the RPC to run the contract locally. It returns the expected output, state changes, and required fee/resource footprint.
-2. **Assemble & Sign** — Add the resource footprint and fee to the transaction, then sign it.
-3. **Send & Poll** — Submit to the network, wait for it to be included in a ledger, and get the final result.
+### Simulate
 
-### 1. Build & Simulate
 ```javascript
-const contractId = "C...";
 const contract = new Contract(contractId);
-
-// 1. Build raw transaction
 const tx = new TransactionBuilder(account, {
-  fee: BASE_FEE,
-  networkPassphrase: Networks.TESTNET,
+  fee: BASE_FEE, networkPassphrase: Networks.TESTNET,
 })
   .addOperation(
     contract.call("get_balance", nativeToScVal(userAddress, { type: "address" }))
   )
-  .setTimeout(30)
-  .build();
+  .setTimeout(30).build();
 
-// 2. Simulate
 const sim = await server.simulateTransaction(tx);
-
 if (SorobanRpc.Api.isSimulationError(sim)) {
   console.error("Simulation failed:", sim.error);
-  // Throw or handle
 }
+```
 
-// 3. Assemble (applies footprint and minResourceFee from simulation)
+### Assemble & sign
+
+```javascript
 const preparedTx = SorobanRpc.assembleTransaction(tx, sim);
-```
-
-### 2. Sign & Submit
-```javascript
 preparedTx.sign(keypair);
+```
 
-const sendResponse = await server.sendTransaction(preparedTx);
+### Submit
 
-if (sendResponse.status === "ERROR") {
-  console.error("Send failed:", sendResponse.errorResultXdr);
-} else {
-  console.log("Tx Hash:", sendResponse.hash);
+```javascript
+const sendRes = await server.sendTransaction(preparedTx);
+
+if (sendRes.status === "ERROR") {
+  console.error("Send failed:", sendRes.errorResultXdr);
 }
 ```
 
-### 3. Poll for Result
+### Poll for result
+
 ```javascript
-let statusResponse;
 while (true) {
-  statusResponse = await server.getTransaction(sendResponse.hash);
-
-  if (statusResponse.status !== "NOT_FOUND") {
-    break;
-  }
-
-  // Wait 2 seconds before polling again
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  const status = await server.getTransaction(sendRes.hash);
+  if (status.status !== "NOT_FOUND") break;
+  await new Promise(r => setTimeout(r, 2000));
 }
 
-if (statusResponse.status === "SUCCESS") {
-  console.log("Success! Result XDR:", statusResponse.returnValue);
-  // Decode result XDR if needed
-} else if (statusResponse.status === "FAILED") {
-  console.error("Transaction failed on-chain.");
+if (status.status === "SUCCESS") {
+  console.log("Result:", status.returnValue);
 }
 ```
 
 ---
 
-## Reading Contract State (Without Invoking)
+## Reading contract state (ledger entries)
 
-If you only need to read data and don't want to use `simulateTransaction` (which has overhead), you can fetch raw ledger entries directly.
+Fetch raw storage without invoking the contract — cheaper than simulation.
 
-### GetLedgerEntries
 ```javascript
-import { xdr } from "@stellar/stellar-sdk";
-
-// Define the storage key you want to fetch
-// This must match exactly how the contract stores it (e.g. Symbol("Admin"))
 const key = xdr.ScVal.scvSymbol("Admin");
-
 const ledgerKey = xdr.LedgerKey.contractData(
   new xdr.LedgerKeyContractData({
     contract: new Contract(contractId).address().toScAddress(),
-    key: key,
+    key,
     durability: xdr.ContractDataDurability.persistent(),
   })
 );
 
-const response = await server.getLedgerEntries(ledgerKey);
-
-if (response.entries && response.entries.length > 0) {
-  const entry = response.entries[0].val;
-  const contractData = entry.contractData();
-  const value = contractData.val();
-  // Decode value based on expected type
+const res = await server.getLedgerEntries(ledgerKey);
+if (res.entries?.length > 0) {
+  const value = res.entries[0].val.contractData().val();
 }
 ```
 
 ---
 
-## Fetching Events
+## Fetching events
 
-Contracts emit events that are stored historically (not just in the active ledger state).
-
-### GetEvents
 ```javascript
-const response = await server.getEvents({
+const events = await server.getEvents({
   startLedger: 1000000,
-  filters: [
-    {
-      type: "contract",
-      contractIds: [contractId],
-      topics: [
-        // Topic 1: "transfer" symbol
-        xdr.ScVal.scvSymbol("transfer").toXDR("base64"),
-        // Topic 2: wildcard
-        "*",
-      ],
-    },
-  ],
+  filters: [{
+    type: "contract",
+    contractIds: [contractId],
+    topics: [
+      [xdr.ScVal.scvSymbol("transfer").toXDR("base64"), "*"],
+    ],
+  }],
   limit: 100,
 });
 
-response.events.forEach(event => {
-  console.log("Ledger:", event.ledger);
-  console.log("Topics:", event.topic);
-  console.log("Data:", event.value); // ScVal XDR
+events.events.forEach(e => {
+  console.log("Ledger:", e.ledger, "Data:", e.value);
 });
 ```
 
-**Note**: RPC Providers often restrict the `startLedger` window (e.g. only keeping the last 7 days of events) to save storage.
-
-### Using an Indexer (The Graph Equivalents)
-If you need to query historical events beyond the RPC's short retention window, or if you need to build complex aggregated views of contract state, you cannot rely on the RPC alone. You must use a dedicated **indexer**.
-
-In the Stellar ecosystem, the standard indexers are **Mercury** and **Zephyr** (which compile WebAssembly indexing scripts). These act as the equivalents to The Graph or Envio in the EVM ecosystem.
+Historical queries beyond provider retention (often ~7 days) require an indexer (Mercury, Zephyr).
 
 ---
 
-## Useful Endpoints Reference
+## Edge cases
 
-| Method | Description | Use Case |
-|--------|-------------|----------|
-| `getHealth` | Returns `healthy` if node is synced | Liveness check |
-| `getLatestLedger` | Current sequence and protocol version | Checking sync status |
-| `getNetwork` | Returns network passphrase | Verify you are on mainnet/testnet |
-| `simulateTransaction` | Dry-run a tx, returns footprint | Mandatory before sending |
-| `sendTransaction` | Submit signed tx | Executing state changes |
-| `getTransaction` | Get status of submitted tx | Polling for completion |
-| `getLedgerEntries` | Fetch raw storage | Reading contract state cheaply |
-| `getEvents` | Fetch historical events | Indexing, UI updates |
-| `getFeeStats` | Current resource fee rates | Fee estimation |
+| Situation | What happens |
+|-----------|-------------|
+| Assemble without simulating | Missing footprint — transaction fails on submission |
+| Two txs from same account concurrently | `tx_bad_seq` on the second — fetch fresh sequence |
+| Fee too low during surge | `tx_insufficient_fee` — check `getFeeStats` percentiles |
+| `startLedger` too old | Provider returns empty or error — retention window varies |
+| Contract invoked without required auth | `auth_not_authorized` — invoker must sign the auth payload |
+| Horizon URL used as RPC endpoint | Connection refused — they are separate APIs |
 
 ---
 
-## Common Errors
+## Common errors
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| Simulation Error (Missing Footprint) | Trying to assemble without simulating | Always run `simulateTransaction` first |
-| `tx_bad_seq` | Sequence number used or stale | Re-fetch account sequence |
-| `tx_insufficient_fee` | Resource fee bumped during surge | Use `getFeeStats` and increase fee |
-| `auth_not_authorized` | Invoker didn't sign the auth payload | Ensure `require_auth` logic matches signers |
+| Simulation error (missing footprint) | Assembled without simulating | Always `simulateTransaction` first |
+| `tx_bad_seq` | Stale or reused sequence number | Re-fetch account before building |
+| `tx_insufficient_fee` | Resource fee increased during surge | Use `getFeeStats`, bump fee |
+| `auth_not_authorized` | Invoker didn't sign auth payload | Match `require_auth` logic with signers |
 
 ---
 
-## Official documentation
+## SDKs
 
-- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
-- RPC methods (example: `simulateTransaction`): https://developers.stellar.org/docs/data/apis/rpc/api-reference/methods/simulateTransaction  
-- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
-- Network resource limits & fees: https://developers.stellar.org/docs/networks/resource-limits-fees  
+```bash
+npm install @stellar/stellar-sdk        # JS/TS (verify: https://github.com/stellar/js-stellar-sdk/releases)
+pip install stellar-sdk                 # Python
+go get github.com/stellar/go-stellar-sdk@latest  # Go
+```
+
+---
+
+## See also
+
+- `/accounts/SKILL.md` — keypairs, account creation, funding
+- [RPC API reference](https://developers.stellar.org/docs/data/apis/rpc/api-reference/methods/simulateTransaction)
+- [Resource limits & fees](https://developers.stellar.org/docs/networks/resource-limits-fees)
 
 ---
 

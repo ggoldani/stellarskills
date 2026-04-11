@@ -1,295 +1,303 @@
 ---
 name: stellarskills-accounts
-description: Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts.
+description: Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts, smart wallets.
 ---
 
 # STELLARSKILLS — Accounts
 
-> Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts.
+> Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts, smart wallets.
+
+---
+
+## When to use
+
+- Creating or funding Stellar accounts
+- Setting up multisig (2-of-3, co-signers)
+- Sponsoring account reserves for users who don't have XLM
+- Reading account state (balances, signers, sequence)
+- Working with muxed accounts (exchanges, custodians)
+
+---
+
+## Quick reference
+
+| Operation | Key detail |
+|-----------|------------|
+| Generate keypair | `Keypair.random()` → G... + S... |
+| Create account | `Operation.createAccount({destination, startingBalance})` — minimum 1 XLM |
+| Minimum balance | `(2 + subentries) × 0.5` XLM |
+| Add signer | `Operation.setOptions({signer: {ed25519PublicKey, weight}})` |
+| Set thresholds | `Operation.setOptions({lowThreshold, medThreshold, highThreshold})` |
+| Sponsor reserves | `beginSponsoringFutureReserves` → ops → `endSponsoringFutureReserves` |
+| Fund on testnet | `GET https://friendbot.stellar.org?addr=G...` |
+| Load account (Horizon) | `server.loadAccount(publicKey)` |
+| Load account (RPC) | `rpcServer.getAccount(publicKey)` |
 
 ---
 
 ## Keypairs
 
-A Stellar account is identified by a **public key** (G...) and controlled by a **secret key** (S...). Both are base32-encoded 32-byte Ed25519 keys.
+Public key (G...) identifies the account. Secret key (S...) controls it. Ed25519, base32-encoded.
 
 ```javascript
 import { Keypair } from "@stellar/stellar-sdk";
 
-// Generate new keypair
 const keypair = Keypair.random();
-console.log(keypair.publicKey());  // G...
-console.log(keypair.secret());     // S...
-
-// From existing secret
-const kp = Keypair.fromSecret("SCZANGBA5RLCQ6LXXPJ7FJZLOL3ZRIQGXKVBIMKTSLK5DGNECJHPQMQ");
+keypair.publicKey();  // G...
+keypair.secret();     // S... — store in env var, never log
 ```
 
-**NEVER log or transmit secret keys.** Store them in environment variables or a secrets manager.
+```javascript
+const kp = Keypair.fromSecret(process.env.SECRET_KEY);
+```
 
 ---
 
-## Account Creation
+## Account creation
 
-Accounts do NOT exist until explicitly created and funded on-chain. Generating a keypair does not create an account.
-
-### Fund with createAccount operation
-> **Horizon** is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations; this pattern is for legacy REST. Prefer [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) + [migration](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) for new apps.
+Accounts do not exist until funded on-chain. Generating a keypair alone does nothing.
 
 ```javascript
-import { TransactionBuilder, Networks, Operation, Asset, BASE_FEE } from "@stellar/stellar-sdk";
-import { Horizon } from "@stellar/stellar-sdk";
-
+import { TransactionBuilder, Networks, Operation, BASE_FEE, Horizon } from "@stellar/stellar-sdk";
 const server = new Horizon.Server("https://horizon-testnet.stellar.org");
-
-const sourceKeypair = Keypair.fromSecret(process.env.SOURCE_SECRET);
 const sourceAccount = await server.loadAccount(sourceKeypair.publicKey());
-
-const newKeypair = Keypair.random();
-
 const tx = new TransactionBuilder(sourceAccount, {
-  fee: BASE_FEE,
-  networkPassphrase: Networks.TESTNET,
+  fee: BASE_FEE, networkPassphrase: Networks.TESTNET,
 })
-  .addOperation(
-    Operation.createAccount({
-      destination: newKeypair.publicKey(),
-      startingBalance: "1",  // minimum ~1 XLM; more if adding trustlines
-    })
-  )
+  .addOperation(Operation.createAccount({
+    destination: newKeypair.publicKey(), startingBalance: "1",
+  }))
   .setTimeout(30)
   .build();
-
 tx.sign(sourceKeypair);
 await server.submitTransaction(tx);
 ```
 
-### Testnet: fund via Friendbot
+Testnet only — fund without a source account:
 ```javascript
-// Only works on testnet
 await fetch(`https://friendbot.stellar.org?addr=${keypair.publicKey()}`);
 ```
 
 ---
 
-## Minimum Balance
+## Minimum balance
 
-Every account must maintain a minimum XLM balance. **If a transaction would drop balance below minimum, it fails.**
+Every account must maintain a minimum XLM balance. Transactions that would drop below minimum fail.
 
-Formula:
 ```
-minimumBalance = (2 + numSubentries) × baseReserve + liabilities
+minimumBalance = (2 + numSubentries) × 0.5 XLM
 ```
 
-- `baseReserve` = **0.5 XLM** (current value)
-- `numSubentries` = number of trustlines + offers + signers + data entries + sponsored entries
-- Base minimum = **1 XLM** (2 × 0.5)
-- Each trustline adds **0.5 XLM** to minimum balance
-- Each additional signer adds **0.5 XLM**
+| Subentry | Adds to minimum |
+|----------|----------------|
+| Each trustline | +0.5 XLM |
+| Each signer | +0.5 XLM |
+| Each offer | +0.5 XLM |
+| Each data entry | +0.5 XLM |
 
-**Practical implication**: Before sending someone tokens, verify they have enough XLM headroom. If you're creating an account that will hold 3 trustlines, fund with at least 2.5 XLM (1 base + 1.5 for trustlines).
+Fund with at least `2.5 XLM` for an account that will hold 3 trustlines.
 
 ```javascript
 const account = await server.loadAccount(publicKey);
-const subentries = account.subentry_count;
-const minBalance = (2 + subentries) * 0.5;
-console.log(`Min balance: ${minBalance} XLM`);
+const minBalance = (2 + account.subentry_count) * 0.5;
 ```
+
+Verify current values at [Stellar Lab → Network limits](https://lab.stellar.org/network-limits).
 
 ---
 
-## Issuer account flags (for issued assets)
+## Issuer flags
 
-These flags are set on the **issuing account** of an asset (via `setOptions`), not on arbitrary “user” accounts. They control how the **issued asset** behaves (authorization, freeze, clawback).
+Set on the **issuing account** via `setOptions`. Control how the issued asset behaves.
 
-| Flag | Effect on the asset |
-|------|---------------------|
-| `AUTH_REQUIRED` | Holders must be authorized before they can hold the asset |
+| Flag | Effect |
+|------|--------|
+| `AUTH_REQUIRED` | Holders must be authorized to hold the asset |
 | `AUTH_REVOCABLE` | Issuer can freeze individual trustlines |
-| `AUTH_IMMUTABLE` | Issuer account flags can no longer be changed |
-| `AUTH_CLAWBACK_ENABLED` | Issuer can claw back the asset from holders |
+| `AUTH_IMMUTABLE` | Issuer flags can no longer be changed |
+| `AUTH_CLAWBACK_ENABLED` | Issuer can claw back tokens from holders |
 
-See [Accounts](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts) and [assets / trustlines](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/assets) in the official docs.
+These apply to asset issuers only. Regular accounts use signers and thresholds (see below).
 
-Regular **non-issuer** accounts use different account-level settings (e.g. signers, thresholds) — do not confuse the two models.
+---
+
+## Smart Wallets
+
+**Smart wallets** are contract accounts (C...) that act as user wallets. Instead of a single secret key (S...), they enforce authorization via a `__check_auth` function — enabling programmable policies like spend limits, allow lists, and timelocks.
+
+### Passkeys (WebAuthn)
+
+The most common smart wallet pattern uses **passkeys** (Touch ID, Face ID, hardware keys) instead of seed phrases.
+
+- Passkeys use **secp256r1** (P-256) keys — natively verified on-chain since Protocol 21
+- No browser extension or seed phrase required
+- Registration: WebAuthn creates device keypair, public key stored in contract state
+- Signing: WebAuthn assertion returns a signature, verified in `__check_auth`
+
+### Key tools
+
+| Tool | Purpose |
+|------|---------|
+| [Passkey Kit](https://github.com/kalepail/passkey-kit) | TypeScript SDK for passkey-based smart wallets |
+| [Smart Account Kit](https://github.com/OpenZeppelin/stellar-contracts) | OZ smart wallet with programmable policies |
+| [Launchtube](https://github.com/stellar/launchtube) | Relay for submitting txs and handling fees (like EVM Paymaster) |
+
+### When to use
+
+- You want passwordless UX (biometrics, no seed phrases)
+- You need programmable auth (limits, multi-factor, session keys)
+- You want flexible signer mixes: passkeys + Ed25519 + policy signers
+
+→ `/smart-accounts/SKILL.md` — full smart account deployment, policies, session keys
+→ [Smart Wallets guide](https://developers.stellar.org/docs/build/guides/contract-accounts/smart-wallets)
 
 ---
 
 ## Signers & Multisig
 
-Every account has a **master key** (the keypair) and can have **additional signers**. Transactions are authorized if the combined weight of signers meets the threshold.
+An account has a master key (weight 1 by default) and optional additional signers. A transaction is authorized when the combined weight of signers meets the threshold.
 
-### Thresholds
-Each account has three thresholds:
-- **Low** (default 0): used for operations like allowTrust, bumpSequence
-- **Medium** (default 0): most operations (payments, offers, etc.)
-- **High** (default 0): setOptions, accountMerge
+| Threshold | Default | Used for |
+|-----------|---------|----------|
+| Low | 0 | allowTrust, bumpSequence |
+| Medium | 0 | payments, offers, most operations |
+| High | 0 | setOptions, accountMerge |
 
-Default threshold is 0, master key weight is 1 — so single-signature works out of the box.
+Default thresholds are 0 with master key weight 1 — single-signature works without configuration.
 
-### Adding a signer
+### Add a signer
 ```javascript
 const tx = new TransactionBuilder(sourceAccount, { fee: BASE_FEE, networkPassphrase: Networks.MAINNET })
-  .addOperation(
-    Operation.setOptions({
-      signer: {
-        ed25519PublicKey: secondSignerPublicKey,
-        weight: 1,
-      },
-    })
-  )
+  .addOperation(Operation.setOptions({
+    signer: { ed25519PublicKey: signer2PubKey, weight: 1 },
+  }))
   .setTimeout(30)
   .build();
 ```
 
-### 2-of-3 Multisig Setup
+### 2-of-3 Multisig
 ```javascript
-// Set master weight and thresholds
 Operation.setOptions({
   masterWeight: 1,
-  lowThreshold: 2,
-  medThreshold: 2,
-  highThreshold: 3,
+  lowThreshold: 2, medThreshold: 2, highThreshold: 3,
   signer: { ed25519PublicKey: signer2, weight: 1 },
 });
-// Repeat for signer3
+// Repeat .addOperation for signer3
 ```
 
 ### Pre-authorized transactions
-You can add a hash of a future transaction as a signer — it authorizes itself when submitted. Useful for time-locked operations.
+
+Add a hash of a future transaction as a signer — it authorizes itself when submitted. Used for time-locked operations.
 
 ---
 
 ## Sponsorship
 
-Account sponsorship lets one account pay the minimum balance reserves for another account's subentries (trustlines, offers, signers, data).
-
-The **sponsor** pays the reserve; the **sponsored** account doesn't need extra XLM for those entries.
+One account (sponsor) pays the XLM reserves for another account's subentries. The sponsored account does not need XLM for those entries.
 
 ```javascript
 const tx = new TransactionBuilder(sponsorAccount, { fee: BASE_FEE, networkPassphrase: Networks.MAINNET })
-  .addOperation(Operation.beginSponsoringFutureReserves({
-    sponsoredId: userPublicKey,
-  }))
-  .addOperation(Operation.createAccount({
-    destination: userPublicKey,
-    startingBalance: "0",  // sponsor covers reserve
-  }))
-  .addOperation(Operation.endSponsoringFutureReserves())  // signed by sponsored account
+  .addOperation(Operation.beginSponsoringFutureReserves({ sponsoredId: userPublicKey }))
+  .addOperation(Operation.createAccount({ destination: userPublicKey, startingBalance: "0" }))
+  .addOperation(Operation.endSponsoringFutureReserves())
   .setTimeout(30)
   .build();
 
-// Must be signed by BOTH sponsor AND sponsored
 tx.sign(sponsorKeypair);
-tx.sign(userKeypair);
+tx.sign(userKeypair);  // both must sign
 ```
 
-**Use case**: Onboarding users without requiring them to own XLM first. The dApp or service sponsors the account creation and trustline reserves.
+Common use: onboarding users who don't own XLM — sponsor account creation + trustline reserves.
 
 ---
 
-## Muxed Accounts
+## Muxed accounts
 
-A **muxed account** (M...) is a virtual sub-account derived from a G... address with an embedded 64-bit ID. It allows a single Stellar account to represent many logical users — useful for exchanges, custodians, and payment processors.
+A muxed account (M...) is a virtual sub-account derived from a G... address with an embedded 64-bit ID. Shares the base account's balance and sequence number — it is a labeling mechanism, not an isolated wallet.
 
 ```javascript
 import { MuxedAccount } from "@stellar/stellar-sdk";
 
-const baseKeypair = Keypair.fromSecret(process.env.SECRET);
 const muxed = new MuxedAccount(
   await server.loadAccount(baseKeypair.publicKey()),
-  "12345678"  // arbitrary user ID
+  "12345678"
 );
-
-console.log(muxed.accountId());  // M... address
-
-// Use as source or destination in transactions
-const tx = new TransactionBuilder(muxed, { fee: BASE_FEE, networkPassphrase: Networks.MAINNET })
-  .addOperation(Operation.payment({
-    destination: recipientMuxed.accountId(),
-    asset: Asset.native(),
-    amount: "10",
-  }))
-  .setTimeout(30)
-  .build();
+muxed.accountId();  // M...
 ```
 
-**Important**: Muxed accounts share the base account's XLM balance and sequence number. They are a labeling mechanism, not isolated wallets.
+Use as source or destination in any operation that accepts an address.
 
 ---
 
-## Loading Account State
-
-> Legacy **Horizon** example; see deprecation note above.
+## Loading account state
 
 ```javascript
-const server = new Horizon.Server("https://horizon.stellar.org");
-
+// Horizon (legacy REST)
 const account = await server.loadAccount(publicKey);
+// account.sequence, .balances, .signers, .thresholds, .subentry_count, .flags
 
-console.log(account.sequence);        // current sequence number
-console.log(account.balances);        // array of { asset_type, asset_code, asset_issuer, balance }
-console.log(account.signers);         // array of signers with weights
-console.log(account.thresholds);      // low/med/high thresholds
-console.log(account.subentry_count);  // number of subentries
-console.log(account.flags);           // auth flags
+// RPC
+const { sequence } = await rpcServer.getAccount(publicKey);
 ```
 
-### Check specific balance
+Check a specific balance:
 ```javascript
-// Circle USDC issuers — verify: https://developers.circle.com/stablecoins/usdc-contract-addresses
-const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
-const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
-
-const xlmBalance = account.balances.find(b => b.asset_type === "native");
-const usdcIssuer = USDC_ISSUER_MAINNET; // use USDC_ISSUER_TESTNET on testnet
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"; // verify: https://developers.circle.com/stablecoins/usdc-contract-addresses
 const usdcBalance = account.balances.find(
-  b => b.asset_code === "USDC" && b.asset_issuer === usdcIssuer
+  b => b.asset_code === "USDC" && b.asset_issuer === USDC_ISSUER_MAINNET
 );
 ```
 
 ---
 
-## Sequence Numbers
+## Sequence numbers
 
-Every transaction must include the **next** sequence number for the source account. Horizon auto-increments it. If you submit two transactions concurrently from the same account, the second will fail (wrong sequence).
+Every transaction needs the source account's **next** sequence number. Submitting two transactions concurrently from the same account causes `tx_bad_seq` on the second.
 
-For concurrent transactions:
-- Use different source accounts (e.g., a fee account + user account)
-- Or queue transactions and submit sequentially
-- Or use Soroban (which has different state model)
+Options: use different source accounts, queue sequentially, or use Soroban (different sequence model).
 
 ---
 
-## Common Errors
+## Edge cases
+
+| Situation | What happens |
+|-----------|-------------|
+| Send XLM to unfunded keypair | `op_no_destination` — account must be created first |
+| Create account with < 1 XLM | `op_low_reserve` — minimum starting balance is 1 XLM |
+| Remove last trustline while holding balance | Fails — must sell/transfer balance first |
+| Sponsor revokes sponsorship while subentries exist | Fails — must remove subentries first or transfer sponsorship |
+| Muxed account receives payment | Credits the base G... account, not a separate balance |
+| Master weight set to 0 with no other signers | Account is permanently locked — cannot recover |
+
+---
+
+## Common errors
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `op_no_destination` | Destination account doesn't exist | Create account first with `createAccount` |
-| `op_low_reserve` | Would drop below minimum balance | Add more XLM or reduce subentries |
-| `tx_bad_seq` | Wrong sequence number | Re-fetch account and rebuild transaction |
-| `op_underfunded` | Not enough balance | Check balance including minimum reserve |
-| `tx_insufficient_fee` | Fee too low during surge | Use fee bump or increase base fee |
+| `op_no_destination` | Recipient account doesn't exist | Create account with `createAccount` first |
+| `op_low_reserve` | Would drop below minimum balance | Fund more XLM or remove subentries |
+| `tx_bad_seq` | Wrong or reused sequence number | Re-fetch account before building transaction |
+| `op_underfunded` | Insufficient balance for payment + fees | Check balance minus minimum reserve + fees |
+| `tx_insufficient_fee` | Fee too low during surge pricing | Use `getFeeStats` or fee bump transaction |
 
 ---
 
 ## SDKs
 
 ```bash
-npm install @stellar/stellar-sdk        # JavaScript / TypeScript
+npm install @stellar/stellar-sdk        # JS/TS (verify: https://github.com/stellar/js-stellar-sdk/releases)
 pip install stellar-sdk                 # Python
-go get github.com/stellar/go/clients/horizonclient  # Go
+go get github.com/stellar/go-stellar-sdk@latest  # Go
 ```
 
 ---
 
-## Official documentation
+## See also
 
-- Stellar docs (root): https://developers.stellar.org/docs  
-- Accounts: https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts  
-- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
-- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
-- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
+- `/assets/SKILL.md` — trustlines and asset issuance (required before receiving non-XLM tokens)
+- `/security/SKILL.md` — `require_auth()` for contract accounts (C...)
+- Official docs: [Accounts](https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts)
 
 ---
 

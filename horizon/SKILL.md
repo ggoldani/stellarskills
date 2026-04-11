@@ -1,428 +1,231 @@
 ---
 name: stellarskills-horizon
-description: Stellar's legacy REST API (Horizon) for classic protocol data. Deprecated for new integrations — prefer Stellar RPC; see /rpc/SKILL.md for smart contracts.
+description: Stellar legacy REST API (Horizon) for classic protocol data. Prefer Stellar RPC for new integrations.
 ---
 
 # STELLARSKILLS — Horizon API
 
-> **Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon)** for new integrations. Prefer **Stellar RPC** for new projects and follow the **[migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc)**. This skill documents Horizon for maintaining existing systems that still rely on its REST API.
+> Legacy REST API for Stellar classic protocol — accounts, payments, offers, transaction submission. Prefer **Stellar RPC** for new projects.
 
 ---
 
-## What is Horizon?
+## When to use
 
-Horizon is the REST API gateway to the Stellar network. It serves the **classic protocol** — accounts, payments, offers, trustlines, and transaction submission. For **Soroban smart contracts**, use **Stellar RPC** (see `/rpc/SKILL.md`).
-
-| Horizon (REST) | Stellar RPC (JSON-RPC) |
-|----------------|-------------------------|
-| Accounts, payments, offers, assets | Smart contract simulation and invocation |
-| Historical transaction data | Contract state, ledger entries |
-| Stellar DEX order book | Events from contracts |
-| Submit classic transactions | Submit Soroban transactions |
+- Maintaining existing systems that already use Horizon REST endpoints
+- Querying classic protocol data (payments, effects, operations, order books)
+- Streaming real-time events via Server-Sent Events
+- Submitting classic (non-Soroban) transactions
+- **Legacy only** — prefer Stellar RPC for new integrations; Horizon is not needed for Soroban smart contracts
 
 ---
 
-## Endpoints
+## Quick reference
+
+| Endpoint | Method | Purpose | Key params |
+|----------|--------|---------|------------|
+| `/accounts/{id}` | GET | Account state (balances, signers, seq) | — |
+| `/transactions` | GET | List transactions | `forAccount`, `forLedger`, `order`, `limit` |
+| `/transactions/{hash}` | GET | Single transaction by hash | — |
+| `/operations` | GET | List operations | `forAccount`, `forTransaction` |
+| `/payments` | GET | List payments (deposit/withdraw/create) | `forAccount`, `order` |
+| `/effects` | GET | List effects (balance changes, trustline events) | `forAccount` |
+| `/assets` | GET | Asset details (supply, holders, flags) | `forCode`, `forIssuer` |
+| `/accounts` | GET (filtered) | Accounts holding an asset | `forAsset` |
+| `/order_book` | GET | DEX order book (bids/asks) | `selling_asset`, `buying_asset` |
+| `/offers` | GET | Offers from an account | `forAccount` |
+| `/ledgers` | GET | Ledger metadata (fees, close time) | `order`, `limit` |
+| `/fee_stats` | GET | Current network fee statistics | — |
+| `/transactions` | POST | Submit transaction | XDR envelope in body |
 
 | Network | URL |
 |---------|-----|
 | Mainnet | `https://horizon.stellar.org` |
 | Testnet | `https://horizon-testnet.stellar.org` |
 
-SDF runs these for free with rate limits. For production, use a dedicated Horizon instance or provider (Blockdaemon, Validation Cloud, etc.).
-
 ---
 
-## Official documentation
+## Key patterns
 
-- Horizon (status & admin): https://developers.stellar.org/docs/data/apis/horizon  
-- Migrate Horizon → Stellar RPC: https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc  
-- Stellar RPC overview: https://developers.stellar.org/docs/data/apis/rpc  
-- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
-
----
-
-## JavaScript SDK Setup
+### SDK setup
 
 ```javascript
-import { Horizon, Networks, Keypair, TransactionBuilder, Operation, Asset, BASE_FEE } from "@stellar/stellar-sdk";
+import { Horizon, Networks, Keypair, TransactionBuilder,
+  Operation, Asset, BASE_FEE } from "@stellar/stellar-sdk";
 
 const server = new Horizon.Server("https://horizon.stellar.org");
-// or testnet:
-const server = new Horizon.Server("https://horizon-testnet.stellar.org");
+// npm install @stellar/stellar-sdk  # verify: https://github.com/stellar/js-stellar-sdk/releases
 ```
 
----
-
-## Load Account
+### Load account
 
 ```javascript
 const account = await server.loadAccount(publicKey);
-
-// account fields:
-account.id                // G... address
-account.sequence          // sequence number (string)
-account.balances          // array of balances
-account.signers           // array of signers
-account.thresholds        // low/med/high
-account.flags             // auth flags
-account.subentry_count    // number of subentries
-account.home_domain       // set domain
-account.data_attr         // account data entries (base64 encoded values)
+// .id, .sequence, .balances, .signers, .thresholds, .flags, .subentry_count
 ```
 
----
-
-## Submit a Transaction
+### Submit transaction
 
 ```javascript
-const keypair = Keypair.fromSecret(process.env.SECRET);
 const account = await server.loadAccount(keypair.publicKey());
-
 const tx = new TransactionBuilder(account, {
-  fee: BASE_FEE,
-  networkPassphrase: Networks.MAINNET,
+  fee: BASE_FEE, networkPassphrase: Networks.MAINNET,
 })
   .addOperation(Operation.payment({
     destination: recipientPublicKey,
-    asset: Asset.native(),
-    amount: "10",
+    asset: Asset.native(), amount: "10",
   }))
-  .setTimeout(30)
-  .build();
-
+  .setTimeout(30).build();
 tx.sign(keypair);
+```
 
+```javascript
 try {
   const result = await server.submitTransaction(tx);
   console.log("Hash:", result.hash);
 } catch (e) {
-  const extras = e.response?.data?.extras;
-  console.error("Result codes:", extras?.result_codes);
-  // { transaction: "tx_failed", operations: ["op_underfunded"] }
+  console.error("Result codes:", e.response?.data?.extras?.result_codes);
 }
 ```
 
-### Always check result_codes on failure
-Horizon wraps Stellar protocol errors. The `extras.result_codes` field tells you exactly which operation failed and why.
+Check `extras.result_codes` on failure — tells which operation failed and why.
 
----
+### Transactions — list and paginate
 
-## Transactions
-
-### Fetch a transaction by hash
-```javascript
-const tx = await server.transactions().transaction(hash).call();
-console.log(tx.successful);
-console.log(tx.envelope_xdr);  // raw XDR
-console.log(tx.result_xdr);
-```
-
-### List transactions for an account
 ```javascript
 const txs = await server
   .transactions()
   .forAccount(publicKey)
-  .order("desc")
-  .limit(20)
-  .call();
+  .order("desc").limit(20).call();
 
-// Paginate
-const nextPage = await txs.next();
+const page = await txs.next();  // cursor-based pagination
 ```
 
-### Filter by ledger
+### Operations, payments, effects
+
 ```javascript
-const txs = await server
-  .transactions()
-  .forLedger(ledgerSequence)
-  .call();
+// Operations for an account
+const ops = await server.operations()
+  .forAccount(publicKey).order("desc").limit(50).call();
+
+// Payments for an account
+const payments = await server.payments()
+  .forAccount(publicKey).order("desc").limit(20).call();
+
+// Effects for an account
+const effects = await server.effects()
+  .forAccount(publicKey).order("desc").limit(20).call();
 ```
 
----
+One transaction = up to 100 operations. Payments include `payment`, `path_payment_strict_send`, `path_payment_strict_receive`, `create_account`.
 
-## Operations
-
-Operations are the individual actions inside a transaction. One transaction can have up to 100 operations.
+### Streaming (Server-Sent Events)
 
 ```javascript
-// List operations for an account
-const ops = await server
-  .operations()
+const close = server.payments()
   .forAccount(publicKey)
-  .order("desc")
-  .limit(50)
-  .call();
-
-ops.records.forEach(op => {
-  console.log(op.type);        // payment, create_account, change_trust, etc.
-  console.log(op.created_at);
-  // type-specific fields:
-  if (op.type === "payment") {
-    console.log(op.from, op.to, op.amount, op.asset_type);
-  }
-});
+  .cursor("now")
+  .stream({
+    onmessage: (p) => console.log(p.amount, p.asset_code ?? "XLM"),
+    onerror: (err) => console.error(err),  // implement reconnect
+  });
+close();  // stop
 ```
 
-### List operations for a transaction
-```javascript
-const ops = await server.operations().forTransaction(txHash).call();
-```
+Works on: transactions, operations, payments, effects, ledgers, offers.
 
----
-
-## Payments
+### Order book & offers
 
 ```javascript
-// All payments for an account (deposits + withdrawals)
-const payments = await server
-  .payments()
-  .forAccount(publicKey)
-  .order("desc")
-  .limit(20)
-  .call();
+const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"; // verify: https://developers.circle.com/stablecoins/usdc-contract-addresses
 
-// Includes: payment, path_payment_strict_send, path_payment_strict_receive, create_account
-payments.records.forEach(p => {
-  console.log(p.type, p.amount, p.asset_code ?? "XLM", p.from, p.to);
-});
-```
-
----
-
-## Effects
-
-Effects are the side-effects of operations — balance changes, trustline created, etc.
-
-```javascript
-const effects = await server
-  .effects()
-  .forAccount(publicKey)
-  .order("desc")
-  .limit(20)
-  .call();
-
-effects.records.forEach(e => {
-  console.log(e.type);  // account_credited, account_debited, trustline_created, etc.
-  console.log(e.amount, e.asset_type);
-});
-```
-
----
-
-## Assets
-
-Circle **USDC** issuers (verify anytime on [Circle USDC contract addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses)):
-
-```javascript
-const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
-const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
-// Pick the issuer matching your Horizon endpoint (mainnet vs testnet).
-const USDC_ISSUER = USDC_ISSUER_MAINNET;
-```
-
-### Find all accounts holding an asset
-```javascript
-const accounts = await server
-  .accounts()
-  .forAsset(new Asset("USDC", USDC_ISSUER))
-  .limit(200)
-  .call();
-```
-
-### Get asset details
-```javascript
-const assets = await server
-  .assets()
-  .forCode("USDC")
-  .forIssuer(USDC_ISSUER)
-  .call();
-
-const asset = assets.records[0];
-console.log(asset.amount);          // total supply
-console.log(asset.num_accounts);    // accounts with trustline
-console.log(asset.flags);           // issuer flags
-```
-
----
-
-## Order Book
-
-```javascript
-const orderBook = await server.orderbook(
-  new Asset("USDC", USDC_ISSUER),  // base asset
-  Asset.native()                    // counter asset (XLM)
+const book = await server.orderbook(
+  new Asset("USDC", USDC_ISSUER), Asset.native()
 ).call();
 
-console.log(orderBook.bids);  // [{price, amount}, ...]
-console.log(orderBook.asks);
+const offers = await server.offers().forAccount(publicKey).call();
 ```
 
----
-
-## Offers
+### Fee stats & fee bump
 
 ```javascript
-// Offers from an account
-const offers = await server
-  .offers()
-  .forAccount(publicKey)
-  .call();
-
-offers.records.forEach(offer => {
-  console.log(offer.id, offer.selling, offer.buying, offer.price, offer.amount);
-});
-```
-
----
-
-## Ledgers
-
-```javascript
-// Latest ledger
-const latest = await server.ledgers().order("desc").limit(1).call();
-const ledger = latest.records[0];
-console.log(ledger.sequence);
-console.log(ledger.closed_at);
-console.log(ledger.base_fee_in_stroops);
-console.log(ledger.base_reserve_in_stroops);
-```
-
----
-
-## Streaming (Server-Sent Events)
-
-Horizon supports real-time streaming for most endpoints. Streams are persistent HTTP connections.
-
-```javascript
-// Stream payments to an account
-const close = server
-  .payments()
-  .forAccount(publicKey)
-  .cursor("now")                    // start from current time
-  .stream({
-    onmessage: (payment) => {
-      console.log("New payment:", payment.amount, payment.asset_code ?? "XLM");
-    },
-    onerror: (err) => {
-      console.error("Stream error:", err);
-      // Reconnect logic here
-    },
-  });
-
-// To stop streaming:
-close();
-```
-
-```javascript
-// Stream all transactions
-server.transactions().cursor("now").stream({ onmessage: (tx) => {
-  console.log(tx.hash);
-}});
-
-// Stream ledgers
-server.ledgers().cursor("now").stream({ onmessage: (ledger) => {
-  console.log(ledger.sequence, ledger.closed_at);
-}});
-```
-
-**Important**: Always implement reconnection logic for production streams. The connection can drop.
-
----
-
-## Fee Stats
-
-Check current network fees before setting fee in transactions:
-
-```javascript
-const feeStats = await server.feeStats();
-
-console.log(feeStats.last_ledger_base_fee);          // current base fee in stroops
-console.log(feeStats.fee_charged.p50);               // median fee charged
-console.log(feeStats.fee_charged.p99);               // 99th percentile (surge pricing)
-```
-
-For surge pricing protection, set fee to `p99` or use a fee bump transaction.
-
----
-
-## Fee Bump Transactions
-
-A fee bump lets you wrap an existing transaction to pay a higher fee — useful to rescue a stuck transaction or sponsor fees for another account.
-
-```javascript
-import { FeeBumpTransaction, TransactionBuilder } from "@stellar/stellar-sdk";
+const stats = await server.feeStats();
+// .last_ledger_base_fee, .fee_charged.p50, .fee_charged.p99
 
 const feeBump = TransactionBuilder.buildFeeBumpTransaction(
-  feeSourceKeypair,        // who pays the fee
-  "10000",                 // new fee (in stroops, per operation)
-  innerTransaction,        // original transaction (already signed)
-  Networks.MAINNET
+  feeSourceKeypair, "10000", innerTx, Networks.MAINNET
 );
-
 feeBump.sign(feeSourceKeypair);
 await server.submitTransaction(feeBump);
 ```
 
----
+Use `p99` fee or fee bump during surge pricing.
 
-## Pagination Pattern
+### Memos
 
-All collection endpoints support cursor-based pagination:
+```javascript
+import { Memo } from "@stellar/stellar-sdk";
+
+// Text (28 bytes max)
+.addMemo(Memo.text("user-id-12345"))
+// ID (uint64)
+.addMemo(Memo.id("9876543210"))
+// Hash (32 bytes)
+.addMemo(Memo.hash(Buffer.from(hashHex, "hex")))
+```
+
+Required by exchanges and anchors in SEP-6/24/31 flows.
+
+### Fetch all pages
 
 ```javascript
 async function fetchAll(builder) {
   const results = [];
   let page = await builder.limit(200).call();
-  
   while (page.records.length > 0) {
     results.push(...page.records);
     page = await page.next();
   }
-  
   return results;
 }
-
-const allTxs = await fetchAll(
-  server.transactions().forAccount(publicKey).order("asc")
-);
 ```
 
 ---
 
-## Memos
+## Edge cases
 
-Memos attach metadata to transactions. Required by many exchanges and anchors.
-
-```javascript
-import { Memo } from "@stellar/stellar-sdk";
-
-// Text memo (up to 28 bytes)
-.addMemo(Memo.text("user-id-12345"))
-
-// ID memo (uint64)
-.addMemo(Memo.id("9876543210"))
-
-// Hash memo (32 bytes)
-.addMemo(Memo.hash(Buffer.from(hashHex, "hex")))
-```
-
-**Always include the memo type and value specified by an anchor in SEP-6/24/31 flows.**
+| Situation | What happens |
+|-----------|-------------|
+| SDF-hosted Horizon historical data | Truncated to ~1 year (since Aug 2024) — use third-party providers for longer history |
+| Unfunded address in `loadAccount` | 404 — account must be created/funded first |
+| Concurrent txs from same account | `tx_bad_seq` on the second — re-fetch sequence between submissions |
+| Stream connection drops | No automatic reconnect — implement retry logic with backoff |
+| Transaction with `setTimeout(30)` | Fails after 30 seconds if not included — use `tx_too_late` error handling |
+| `op_no_trust` on payment | Recipient needs a trustline for the asset before receiving |
+| `op_line_full` on payment | Recipient's trustline limit reached — must increase limit first |
+| Muxed address (M...) as recipient | Credits the base G... account — muxed is a label, not a separate wallet |
 
 ---
 
-## Common Errors
+## Common errors
 
-| HTTP | Code | Cause |
-|------|------|-------|
-| 400 | `tx_bad_seq` | Wrong sequence number — reload account |
-| 400 | `tx_insufficient_fee` | Fee too low — check fee_stats |
-| 400 | `op_underfunded` | Insufficient balance |
-| 400 | `op_no_destination` | Recipient account doesn't exist |
-| 400 | `op_no_trust` | No trustline for asset |
-| 400 | `op_line_full` | Trustline at limit |
-| 400 | `tx_too_late` / `tx_too_early` | Transaction expired or time bounds wrong |
-| 504 | timeout | Network congestion — resubmit or use fee bump |
+| HTTP | Code | Cause | Fix |
+|------|------|-------|-----|
+| 400 | `tx_bad_seq` | Wrong/reused sequence number | Reload account before building tx |
+| 400 | `tx_insufficient_fee` | Fee too low during surge | Check `feeStats`, use `p99` or fee bump |
+| 400 | `op_underfunded` | Insufficient balance for payment + fees | Check balance minus min reserve + fees |
+| 400 | `op_no_destination` | Recipient account doesn't exist | Use `createAccount` first |
+| 400 | `op_no_trust` | No trustline for the asset | Recipient must add trustline |
+| 400 | `op_line_full` | Trustline balance at limit | Increase trustline limit |
+| 400 | `tx_too_late` / `tx_too_early` | Tx outside time bounds | Adjust `setTimeout` or `minTime`/`maxTime` |
+| 504 | timeout | Network congestion | Resubmit or use fee bump transaction |
+
+---
+
+## See also
+
+- `/rpc/SKILL.md` — Stellar RPC (preferred for new projects, required for Soroban)
+- `/accounts/SKILL.md` — account creation, multisig, sponsorship, muxed accounts
+- [Migrate Horizon → RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) — official migration guide
 
 ---
 

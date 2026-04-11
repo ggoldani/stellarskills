@@ -1,83 +1,93 @@
 ---
 name: stellarskills-security
-description: Critical security patterns, common vulnerabilities, and best practices for writing Soroban smart contracts in Rust.
+description: Auth patterns, input validation, access control, overflow protection, and storage TTL for Soroban contracts in Rust.
 ---
 
-# STELLARSKILLS — Soroban Security
+# STELLARSKILLS — Security
 
-> Critical security patterns, common vulnerabilities, and best practices for writing Soroban smart contracts in Rust.
-
-**Protocol note:** From **Protocol 25 (X-Ray)** onward, the network adds native ZK-oriented primitives for advanced use cases. If you build privacy or proof-based flows, read the official upgrade guide and current limits in the Stellar docs — do not assume this skill replaces those specifications: https://stellar.org/blog/developers/stellar-x-ray-protocol-25-upgrade-guide  
+> Auth patterns, input validation, access control, overflow protection, and storage TTL for Soroban contracts in Rust.
 
 ---
 
-## 1. Authentication & Authorization
+## When to use
 
-Soroban's auth model is explicitly "pull-based". You must explicitly require authorization from the caller, rather than implicitly trusting `msg.sender` like in EVM.
+- Any Soroban function that modifies user state or spends funds
+- Adding or reviewing auth checks, access control, or admin patterns
+- Protecting arithmetic, storage, and iteration from edge-case failures
+- Designing contract upgrade or admin transfer flows
 
-### The Golden Rule
-**If a function modifies state belonging to a user, or spends their funds, it MUST call `.require_auth()` on that user's Address.**
+---
+
+## Quick reference
+
+| Vulnerability | Prevention |
+|---------------|-----------|
+| Unauthorized state change | `address.require_auth()` on every function that modifies user-owned state |
+| Over-permissioned auth | Use `require_auth_for_args()` when only a subset of args needs signing |
+| Integer overflow | `checked_add` / `checked_sub` / `checked_mul` — never bare `+` or `-` on financial values |
+| Unbounded iteration | Batch limits passed from client; never iterate over unbounded maps |
+| Storage data loss | Extend TTL on every read/write of persistent entries |
+| Accidental admin lockout | Two-step transfer: propose + accept with require_auth on both |
+| Malicious upgrade | Timelock admin key or omit upgrade function for trustless protocols |
+
+---
+
+## require_auth
+
+Soroban auth is pull-based — no implicit `msg.sender`. If a function modifies user state or spends their funds, it **must** call `.require_auth()`.
 
 ```rust
-// VULNERABLE: Anyone can call this and withdraw from `user`
+// VULNERABLE: anyone can withdraw from `user`
 pub fn withdraw(env: Env, user: Address, amount: i128) {
     let balance = get_balance(&env, &user);
     set_balance(&env, &user, balance - amount);
 }
 
-// SECURE: Ensures `user` signed the transaction authorizing this exact call
+// SECURE: caller must sign for this exact invocation
 pub fn withdraw(env: Env, user: Address, amount: i128) {
-    user.require_auth(); // <--- CRITICAL
-
+    user.require_auth();
     let balance = get_balance(&env, &user);
     set_balance(&env, &user, balance - amount);
 }
 ```
 
 ### require_auth vs require_auth_for_args
-`.require_auth()` authorizes the call with the *exact arguments passed to the function*.
-If you need a user to authorize a subset of arguments, or a different internal action, use `.require_auth_for_args()`.
+
+`require_auth()` authorizes the call with **all** arguments. `require_auth_for_args()` authorizes only the provided subset.
+
+```rust
+// User authorizes only (amount), not the recipient
+let user_auth = user.require_auth_for_args((&amount,));
+// Use when a function needs to verify user intent for a specific arg
+// but the remaining args are determined by contract logic
+```
+
+### When to use which
+
+| Scenario | Use |
+|----------|-----|
+| User transfers own tokens to any recipient | `require_auth()` — user approves the full call |
+| Admin function with user-provided parameter | `require_auth()` on admin, validate user param separately |
+| User approves amount but contract picks recipient | `require_auth_for_args((&amount,))` |
 
 ---
 
-## 2. Reentrancy
+## Checks-Effects-Interactions
 
-Soroban does **NOT** prevent reentrancy inherently. If your contract calls another contract, that contract can call back into yours before your function finishes.
+Soroban's synchronous execution prevents cross-contract reentrancy — contract B finishes before A resumes. No async/mempool reentrancy like EVM. Self-reentrancy is architecturally limited.
 
-### The Vulnerability
-If you update state *after* making an external call, a malicious contract can re-enter your function and drain funds.
-
-```rust
-// VULNERABLE: State updated AFTER external call
-pub fn withdraw(env: Env, user: Address, amount: i128) {
-    user.require_auth();
-    let token = token::Client::new(&env, &token_id);
-
-    // External call (execution control passes to token contract)
-    token.transfer(&env.current_contract_address(), &user, &amount);
-
-    // State update (too late!)
-    let balance = get_balance(&env, &user);
-    set_balance(&env, &user, balance - amount);
-}
-```
-
-### The Fix (Checks-Effects-Interactions Pattern)
-Always update your internal state *before* calling external contracts.
+The pattern remains defense-in-depth: update state before external calls.
 
 ```rust
-// SECURE: State updated BEFORE external call
 pub fn withdraw(env: Env, user: Address, amount: i128) {
     user.require_auth();
-
-    // 1. Checks
     let balance = get_balance(&env, &user);
     if balance < amount { panic!("insufficient funds"); }
 
-    // 2. Effects (State Update)
+    // Effects first
     set_balance(&env, &user, balance - amount);
 
-    // 3. Interactions (External Call)
+    // Interaction last
     let token = token::Client::new(&env, &token_id);
     token.transfer(&env.current_contract_address(), &user, &amount);
 }
@@ -85,67 +95,46 @@ pub fn withdraw(env: Env, user: Address, amount: i128) {
 
 ---
 
-## 3. Arithmetic Overflows
+## Arithmetic
 
-By default, Rust panics on integer overflow in debug mode, but **wraps** in release mode. Since contracts are compiled in release mode, overflows can silently corrupt balances.
-
-### The Fix
-Always use checked arithmetic (`checked_add`, `checked_sub`, `checked_mul`) for financial calculations.
+Rust wraps on overflow in release mode (how contracts are compiled). Always use checked arithmetic for financial values.
 
 ```rust
-// VULNERABLE (Wraps in release mode)
+// VULNERABLE: wraps silently in release
 let new_balance = balance + amount;
 
-// SECURE
-let new_balance = balance.checked_add(amount).expect("arithmetic overflow");
+// SECURE: panics on overflow — transaction fails safely
+let new_balance = balance.checked_add(amount).expect("overflow");
 ```
 
 ---
 
-## 4. Unbounded Loops & Iteration
+## Iteration limits
 
-Soroban has strict resource limits (CPU and memory). If you iterate over an unbounded data structure (like a list of all users), an attacker can add enough entries to make the transaction hit the limit, permanently bricking the contract.
-
-### The Fix
-- Avoid arrays/vectors that grow indefinitely.
-- Do not iterate over user maps.
-- If pagination is necessary, pass limits and cursors from the client side.
+Soroban has strict CPU/memory budgets. Unbounded iteration over storage can brick a contract.
 
 ```rust
-// VULNERABLE: Fails if vec gets too large
-let users: Vec<Address> = env.storage().instance().get(&DataKey::UserList).unwrap();
-for user in users.iter() {
-    payout(&env, user);
-}
-
-// SECURE: Client batches payouts
+// SECURE: client controls batch size
 pub fn payout_batch(env: Env, users: Vec<Address>) {
-    // Check batch size
     if users.len() > 50 { panic!("batch too large"); }
     for user in users.iter() {
-        payout(&env, user);
+        payout(&env, &user);
     }
 }
 ```
 
+Rules: never iterate over unbounded maps, always cap batch size, pass limits from the client.
+
 ---
 
-## 5. Storage Expiration & TTL
+## Storage TTL
 
-Soroban storage entries (`Persistent` and `Temporary`) expire if their Time-To-Live (TTL) is not explicitly extended.
-
-### The Vulnerability
-If you store a user's deposit balance in `Persistent` storage and fail to extend its TTL, the network will archive it. The user will lose access to their funds until a `RestoreFootprint` operation is executed. If you use `Temporary` storage, the data is permanently deleted.
-
-### The Fix
-Extend the TTL whenever a persistent record is read or written.
+Persistent storage entries expire if TTL is not extended. Expired data is archived — requires `RestoreFootprint` to recover. Temporary storage is deleted permanently.
 
 ```rust
 pub fn get_balance(env: Env, user: Address) -> i128 {
     let key = DataKey::Balance(user);
-
     if let Some(balance) = env.storage().persistent().get::<_, i128>(&key) {
-        // Extend TTL whenever accessed
         env.storage().persistent().extend_ttl(&key, 1000, 100000);
         balance
     } else {
@@ -154,41 +143,75 @@ pub fn get_balance(env: Env, user: Address) -> i128 {
 }
 ```
 
----
-
-## 6. Admin Key Management
-
-Contracts often use an admin key for upgrades or emergency pauses.
-
-- Store the admin key in `Instance` storage.
-- Always require admin auth via `admin.require_auth()`.
-- Implement a two-step admin transfer process (propose admin, accept admin) to prevent accidentally assigning admin to a dead address.
+Extend TTL on every read and write. Default persistent TTL is ~2 weeks; max is ~1 year (see official docs for current values).
 
 ---
 
-## 7. Contract Upgrades
+## Access control
 
-Contracts can upgrade their own WASM code.
+### Admin pattern
 
 ```rust
 pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) {
-    let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+    let admin: Address = env.storage().instance()
+        .get(&DataKey::Admin).unwrap();
     admin.require_auth();
-
     env.deployer().update_current_contract_wasm(new_wasm_hash);
 }
 ```
 
-**Security Risk**: Upgrades can maliciously alter contract logic. If building a trustless protocol, either omit the upgrade function or place the admin address under a timelocked DAO/multisig.
+### Two-step admin transfer
+
+Prevents locking the contract by assigning admin to an unreachable address.
+
+```rust
+pub fn propose_admin(env: Env, new_admin: Address) {
+    let admin: Address = env.storage().instance()
+        .get(&DataKey::Admin).unwrap();
+    admin.require_auth();
+    env.storage().instance().set(&DataKey::PendingAdmin, &new_admin);
+}
+
+pub fn accept_admin(env: Env) {
+    let pending: Address = env.storage().instance()
+        .get(&DataKey::PendingAdmin).unwrap();
+    pending.require_auth();
+    env.storage().instance().set(&DataKey::Admin, &pending);
+    env.storage().instance().remove(&DataKey::PendingAdmin);
+}
+```
 
 ---
 
-## Official documentation
+## Edge cases
 
-- Soroban overview: https://developers.stellar.org/docs/build/smart-contracts/overview  
-- Contract authorization: https://developers.stellar.org/docs/build/guides/auth  
-- Storing data / storage: https://developers.stellar.org/docs/build/smart-contracts/getting-started/storing-data  
-- Fees & metering (resource limits affect DoS): https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering  
+| Situation | Result |
+|-----------|--------|
+| `require_auth` on contract's own address | Always succeeds — contract invokes itself, no signature needed |
+| Upgrade with no TTL extension on admin key | Admin key expires, contract becomes permanently unupgradeable |
+| `checked_sub` where minuend < subtrahend | Returns `None` — handle with `.expect()` or early return |
+| Batch size of 0 passed to iterator | No-op — not an error, but may hide a client bug |
+| Temporary storage used for user balances | Data deleted after expiration — use persistent for financial state |
+
+---
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `AuthError::InvalidContext` | `require_auth` called on wrong address or in unexpected context | Verify the Address matches the signer of the transaction |
+| Panic: arithmetic overflow | Bare `+`/`-`/`*` on financial values | Use `checked_add` / `checked_sub` / `checked_mul` |
+| `HostError(Storage(Expiration))` | TTL expired, entry archived | Extend TTL on every read/write; use `RestoreFootprint` to recover |
+| Contract bricked after upgrade | Bad WASM hash or logic error in new code | Test on testnet first; use timelock on admin |
+| Admin locked out | Single-step admin transfer to unreachable address | Use two-step propose + accept pattern |
+
+---
+
+## See also
+
+- `/accounts/SKILL.md` — keypairs, signers, multisig, and account-level auth
+- [Soroban contract auth](https://developers.stellar.org/docs/build/guides/auth) — official authorization guide
+- [Fees & resource limits](https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering) — CPU/memory budgets
 
 ---
 

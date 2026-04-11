@@ -110,6 +110,21 @@
       "name": "stellarskills-x402",
       "description": "Pay-per-API calls for AI Agents on Stellar. Monetize endpoints natively without subscriptions or credit cards using HTTP 402.",
       "path": "../x402/SKILL.md"
+    },
+    {
+      "name": "stellarskills-mpp",
+      "description": "Machine Payments Protocol on Stellar. HTTP 402 charge and session intents for AI agents using Soroban token transfers without external facilitator.",
+      "path": "../mpp/SKILL.md"
+    },
+    {
+      "name": "stellarskills-passkeys",
+      "description": "Passkeys (WebAuthn) and smart wallets on Stellar. secp256r1 signatures, __check_auth authorization, and Launchtube relay for gasless flows.",
+      "path": "../passkeys/SKILL.md"
+    },
+    {
+      "name": "stellarskills-state-archival",
+      "description": "Soroban state archival and TTL management. Storage expiration, restoration paths, and operational patterns for contract state on Stellar.",
+      "path": "../state-archival/SKILL.md"
     }
   ]
 }

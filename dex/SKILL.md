@@ -1,181 +1,188 @@
 ---
 name: stellarskills-dex
-description: Stellar's built-in order book, Automated Market Makers (AMM), Liquidity Pools, and Path Payments.
+description: Stellar native DEX: order books, AMM pools, liquidity management, path payments.
 ---
 
-# STELLARSKILLS — DEX & AMM
+# STELLARSKILLS — DEX
 
-> Stellar's built-in order book, Automated Market Makers (AMM), Liquidity Pools, and Path Payments.
+> Stellar native DEX: order books, AMM pools, liquidity management, path payments.
 
 ---
 
-## The Built-in DEX
+## When to use
 
-Stellar is unique among layer-1s: it has an order book natively built into the protocol. You don't need a smart contract (like Uniswap) to trade assets; it's a core protocol operation.
+- Trading assets on-chain via limit orders or AMM swaps
+- Providing or withdrawing liquidity from AMM pools
+- Executing path payments (A → intermediary → B) in one atomic tx
+- Finding optimal swap routes across order books and pools
+- Canceling or updating existing offers
 
-Features:
-- Completely on-chain limit order book.
-- No front-running via mempool (transactions apply deterministically).
-- Trades execute immediately if they cross the spread.
+---
 
-### Create an Offer (Limit Order)
+## Quick reference
 
-Use `ManageBuyOffer` or `ManageSellOffer`. They are effectively identical, just framed differently (I want to buy X vs I want to sell Y).
+| Mechanism | Operation | Key detail |
+|-----------|-----------|------------|
+| Sell offer | `manageSellOffer` | Sell X, buy Y at `price` (Y/X) |
+| Buy offer | `manageBuyOffer` | Buy Y, sell X at `price` (Y/X) |
+| Cancel offer | `manageSellOffer` amount=0 | Must match original `offerId` + `price` |
+| AMM deposit | `liquidityPoolDeposit` | Max amounts + price range for slippage |
+| AMM withdraw | `liquidityPoolWithdraw` | Pool shares → min amounts out |
+| Path send | `pathPaymentStrictSend` | Fixed input, variable output (`destMin`) |
+| Path receive | `pathPaymentStrictReceive` | Fixed output, variable input (`sendMax`) |
+| Find paths | Horizon `strictReceivePaths` | Returns sorted routes; pass `.path` to op |
+
+DEX on Stellar is native protocol — no smart contracts needed. Trades are deterministic (no mempool front-running).
+
+---
+
+## Order books
+
+Limit orders (offers) are core protocol operations. Two framing modes, identical mechanism.
+
+### Create a sell offer
 
 ```javascript
-import { Horizon, Operation, Asset, LiquidityPoolFeeV18 } from "@stellar/stellar-sdk";
+import { Operation, Asset } from "@stellar/stellar-sdk";
 
-// Circle USDC — mainnet vs testnet: https://developers.circle.com/stablecoins/usdc-contract-addresses
-const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
-const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
-const USDC = new Asset("USDC", USDC_ISSUER_MAINNET); // switch issuer on testnet
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"; // verify: https://developers.circle.com/stablecoins/usdc-contract-addresses
+const USDC = new Asset("USDC", USDC_ISSUER_MAINNET);
 const XLM = Asset.native();
 
-// "I want to sell 100 USDC to buy XLM at a price of 10 XLM per USDC"
 const sellOffer = Operation.manageSellOffer({
-  selling: USDC,
-  buying: XLM,
-  amount: "100",          // Amount of USDC I'm selling
-  price: "10.0",          // 10 XLM / 1 USDC
-  offerId: "0",           // 0 means create a new offer
+  selling: USDC, buying: XLM,
+  amount: "100",     // USDC to sell
+  price: "10.0",     // XLM per USDC
+  offerId: "0",      // 0 = new offer
 });
 ```
 
-### Update or Cancel an Offer
-
-To update, provide the existing `offerId`.
-To cancel, update the offer but set `amount: "0"`.
+### Cancel an offer
 
 ```javascript
 const cancelOffer = Operation.manageSellOffer({
-  selling: USDC,
-  buying: XLM,
-  amount: "0",            // Cancel
-  price: "10.0",          // Price must still match original
-  offerId: "12345",       // ID from previous transaction effect
+  selling: USDC, buying: XLM,
+  amount: "0",       // cancel
+  price: "10.0",     // must match original
+  offerId: "12345",  // from previous tx effect
 });
 ```
 
 ---
 
-## Automated Market Makers (AMM) / Liquidity Pools
+## AMM liquidity pools
 
-Stellar also supports protocol-level AMMs. Users can provide liquidity to pools (CPMM: $x \times y = k$). **Swap fees** depend on each pool’s on-chain fee parameter (e.g. constants like `LiquidityPoolFeeV18` in the SDK map to protocol-defined basis points — confirm the fee tier in the [list of operations](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations) / current network docs rather than hardcoding a percentage).
+Constant-product AMM (`x × y = k`) built into the protocol. Pools identified by deterministic hash of (assetA, assetB, fee).
 
-### Get a Liquidity Pool ID
-
-Pools are identified by a deterministic hash of their assets and fee.
+### Get pool ID
 
 ```javascript
-import { LiquidityPoolAsset } from "@stellar/stellar-sdk";
+import { LiquidityPoolAsset, LiquidityPoolFeeV18 } from "@stellar/stellar-sdk";
 
-// Pool for XLM / USDC (assets must be sorted lexicographically)
 const lpAsset = new LiquidityPoolAsset(Asset.native(), USDC, LiquidityPoolFeeV18);
 const poolId = lpAsset.getLiquidityPoolId();
 ```
 
-### Provide Liquidity (Deposit)
+### Deposit liquidity
 
 ```javascript
 const deposit = Operation.liquidityPoolDeposit({
   liquidityPoolId: poolId,
-  maxAmountA: "100",      // Max XLM willing to deposit
-  maxAmountB: "10",       // Max USDC willing to deposit
-  minPrice: "9.5",        // Slippage protection: min A/B price
-  maxPrice: "10.5",       // Slippage protection: max A/B price
+  maxAmountA: "100",   // max XLM to deposit
+  maxAmountB: "10",    // max USDC to deposit
+  minPrice: "9.5",     // slippage floor (A/B)
+  maxPrice: "10.5",    // slippage ceiling (A/B)
 });
 ```
 
-### Withdraw Liquidity
+### Withdraw liquidity
 
 ```javascript
 const withdraw = Operation.liquidityPoolWithdraw({
   liquidityPoolId: poolId,
-  amount: "50",           // Amount of pool shares to redeem
-  minAmountA: "90",       // Slippage: minimum XLM to receive
-  minAmountB: "9",        // Slippage: minimum USDC to receive
+  amount: "50",        // pool shares to redeem
+  minAmountA: "90",    // min XLM received
+  minAmountB: "9",     // min USDC received
 });
 ```
 
 ---
 
-## Path Payments (Swaps)
+## Path payments
 
-Path payments are the most powerful DEX feature. They allow an account to send Asset A, route it through the DEX (order books or AMMs), and deliver Asset B to the recipient — all in one atomic transaction.
+Send asset A, route through DEX (order books + AMMs), deliver asset B — one atomic transaction. Fails if exchange rate is unsatisfiable.
 
-**If the DEX cannot satisfy the exchange rate requested, the entire transaction fails.**
-
-### Strict Send (Known Input, Variable Output)
-
-"I want to spend exactly 10 USDC, give the recipient as much XLM as possible." (Substitute any `destAsset` you have a trustline for — always use **code + issuer** for non-native assets.)
+### Strict send (fixed input)
 
 ```javascript
 const strictSend = Operation.pathPaymentStrictSend({
-  sendAsset: USDC,
-  sendAmount: "10.0",           // Exactly 10 USDC spent
+  sendAsset: USDC, sendAmount: "10.0",
   destination: recipientKey,
-  destAsset: XLM,
-  destMin: "5.0",               // Slippage: tx fails if recipient gets < this much XLM
-  path: [],                     // Optional intermediary assets
+  destAsset: XLM, destMin: "5.0",
+  path: [],
 });
 ```
 
-### Strict Receive (Variable Input, Known Output)
-
-"The recipient must receive exactly 50 XLM, spend as little of my USDC as possible."
+### Strict receive (fixed output)
 
 ```javascript
 const strictReceive = Operation.pathPaymentStrictReceive({
-  sendAsset: USDC,
-  sendMax: "11.0",              // Slippage: tx fails if costs > 11 USDC
+  sendAsset: USDC, sendMax: "11.0",
   destination: recipientKey,
-  destAsset: XLM,
-  destAmount: "50.0",           // Exactly 50 XLM received
-  path: [],                     // Optional intermediary assets
+  destAsset: XLM, destAmount: "50.0",
+  path: [],
 });
 ```
 
-### Path Finding
-
-You usually don't need to specify the `path` array manually. **Horizon** can compute paths across order books and AMMs (REST). Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for **new** data integrations — prefer **[Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc)** and the [migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) when building new indexers or backends; this pattern remains valid for legacy stacks.
+### Find swap paths
 
 ```javascript
-const server = new Horizon.Server("https://horizon.stellar.org");
+import { Horizon } from "@stellar/stellar-sdk";
 
-// Find best path for a Strict Receive
+const server = new Horizon.Server("https://horizon.stellar.org");
 const paths = await server.strictReceivePaths({
-  sourceAssets: [USDC, XLM],    // What assets do I have to spend?
+  sourceAssets: [USDC, XLM],
   destinationAsset: XLM,
   destinationAmount: "50.0",
 }).call();
 
 const bestPath = paths.records[0];
-console.log(`Spend ${bestPath.source_amount} of ${bestPath.source_asset_code}`);
-console.log(`Path:`, bestPath.path);
+// Pass bestPath.path to the path array in your Operation
 ```
 
-Pass `bestPath.path` into the `path` array of your Operation.
+---
+
+## Edge cases
+
+| Situation | What happens |
+|-----------|-------------|
+| Match against own offer | `op_cross_self` — tx fails |
+| No trustline for dest asset | `op_no_trust` — recipient needs `changeTrust` |
+| Pool deposit exceeds reserves | Partial fill within `maxAmount` bounds |
+| Path payment route exhausted mid-tx | Entire tx fails atomically |
+| Cancel offer with wrong `offerId` | Creates a new offer instead |
+| Offer with price=0 | Rejected — invalid price |
 
 ---
 
-## Common Errors
+## Common errors
 
-| Error | Meaning | Fix |
-|-------|---------|-----|
-| `op_underfunded` | Not enough asset to create offer or swap | Check balances |
-| `op_cross_self` | Trying to match against your own offer | Cancel existing offer first |
-| `op_over_source_max` | (Strict Receive) Slippage hit, cost too high | Adjust `sendMax` |
-| `op_under_dest_min` | (Strict Send) Slippage hit, output too low | Adjust `destMin` |
-| `op_no_trust` | Recipient lacks trustline for destination asset | Recipient must `changeTrust` |
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `op_underfunded` | Insufficient balance for offer or swap | Check balances before building tx |
+| `op_cross_self` | Matching against your own offer | Cancel existing offer first |
+| `op_over_source_max` | Strict receive slippage exceeded | Increase `sendMax` |
+| `op_under_dest_min` | Strict send output below threshold | Decrease `destMin` |
+| `op_no_trust` | Recipient lacks trustline | Recipient must add `changeTrust` |
+| `tx_bad_seq` | Stale sequence number | Re-fetch account before building |
 
 ---
 
-## Official documentation
+## See also
 
-- SDEX & liquidity pools: https://developers.stellar.org/docs/learn/fundamentals/liquidity-on-stellar-sdex-liquidity-pools  
-- List of operations: https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations  
-- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
-- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
+- `/operations/SKILL.md` — full operation builder reference
+- `/assets/SKILL.md` — trustlines required to hold non-XLM assets
+- [Liquidity on Stellar](https://developers.stellar.org/docs/learn/fundamentals/liquidity-on-stellar-sdex-liquidity-pools)
 
 ---
 

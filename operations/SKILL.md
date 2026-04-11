@@ -1,82 +1,129 @@
 ---
 name: stellarskills-operations
-description: Reference for all Stellar transaction operations. Payments, account management, offers, trustlines.
+description: All Stellar transaction operations. Payments, account management, DEX, trustlines, sponsorship, Soroban.
 ---
 
 # STELLARSKILLS — Operations
 
-> Reference for all Stellar transaction operations. Payments, account management, offers, trustlines.
+> All Stellar transaction operations. Payments, account management, DEX, trustlines, sponsorship, Soroban.
 
 ---
 
-## Transaction & Operation Structure
+## When to use
 
-A Stellar transaction is a wrapper around 1 to 100 **Operations**.
-- The transaction defines the `sourceAccount`, `fee`, `sequenceNumber`, and `timeBounds`.
-- Operations define the actual state changes (e.g., send money, create trustline).
-- By default, operations execute under the transaction's `sourceAccount`. You can override this by providing a `source` to the operation itself.
+- Building any Stellar transaction — this is the operation reference
+- Sending payments (XLM or assets), converting via path payments
+- Managing accounts (options, merge, data), trustlines, or DEX offers
+- Setting up sponsorship or invoking Soroban contracts from classic tx
+- Quick lookup of operation params and edge-case behavior
+
+---
+
+## Quick reference
+
+| Operation | Key params | When to use |
+|-----------|-----------|-------------|
+| `createAccount` | `destination`, `startingBalance` | Fund new account (min 1 XLM) |
+| `payment` | `destination`, `asset`, `amount` | Send asset to existing account |
+| `pathPaymentStrictSend` | `sendAsset`, `sendAmount`, `destAsset`, `destMin`, `path` | Send exact X, get ≥Y (DEX swap) |
+| `pathPaymentStrictReceive` | `sendAsset`, `sendMax`, `destAsset`, `destAmount`, `path` | Get exact Y, pay ≤X (DEX swap) |
+| `changeTrust` | `asset`, `limit` | Create/update/delete trustline |
+| `setTrustLineFlags` | `trustor`, `asset`, `flags` | Authorize/freeze trustlines (issuer) |
+| `clawback` | `from`, `asset`, `amount` | Seize tokens (requires clawback flag) |
+| `setOptions` | `signer`, `thresholds`, `homeDomain`, `setFlags` | Update account config |
+| `accountMerge` | `destination` | Delete account, send XLM to dest |
+| `manageData` | `name`, `value` | Set/delete account data entry |
+| `manageSellOffer` | `selling`, `buying`, `amount`, `price` | Sell A for B on DEX |
+| `manageBuyOffer` | `selling`, `buying`, `buyAmount`, `price` | Buy A with B on DEX |
+| `createPassiveSellOffer` | `selling`, `buying`, `amount`, `price` | Non-crossing sell offer |
+| `liquidityPoolDeposit` | `poolId`, `maxAmountA`, `maxAmountB` | Deposit into AMM pool |
+| `liquidityPoolWithdraw` | `poolId`, `amount` | Withdraw from AMM pool |
+| `beginSponsoringFutureReserves` | `sponsoredId` | Start sponsorship sequence |
+| `invokeHostFunction` | `func`, `auth` | Call Soroban contract (classic envelope) |
+| `extendFootprintTtl` | `extendTo` | Extend TTL for read-only entries |
+| `restoreFootprint` | `{}` | Restore archived read-write entries |
+
+---
+
+## Transaction structure
+
+1–100 operations per transaction. Each tx has `sourceAccount`, `fee`, `sequenceNumber`, `timeBounds`.
 
 ```javascript
-import { TransactionBuilder, Operation, Asset } from "@stellar/stellar-sdk";
+import { TransactionBuilder, Operation, Asset, BASE_FEE, Networks } from "@stellar/stellar-sdk";
 
-const tx = new TransactionBuilder(account, { fee: BASE_FEE })
+const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.MAINNET })
   .addOperation(Operation.payment({ ... }))
-  .addOperation(Operation.changeTrust({ ... })) // Both execute atomically
+  .addOperation(Operation.changeTrust({ ... }))
+  .setTimeout(30)
   .build();
 ```
 
-### Circle USDC issuers (verify on [Circle’s list](https://developers.circle.com/stablecoins/usdc-contract-addresses))
+Operations execute under the tx source account by default. Override per-op with `source`:
 
 ```javascript
-const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+Operation.changeTrust({ asset: usdc, source: "G_USER..." })
+```
+
+### USDC issuers
+
+```javascript
+const USDC_ISSUER_MAINNET = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"; // verify: https://developers.circle.com/stablecoins/usdc-contract-addresses
 const USDC_ISSUER_TESTNET = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
-const USDC_ISSUER = USDC_ISSUER_MAINNET; // use TESTNET constant on testnet
 ```
 
 ---
 
-## Core Operations
+## Core operations
 
 ### Create Account
-Funds a new account. The destination account must not exist yet.
+
+Funds a new account. Destination must not exist. Min starting balance: 1 XLM.
+
 ```javascript
 Operation.createAccount({
   destination: "G...",
-  startingBalance: "2.5", // in XLM
+  startingBalance: "2.5",
 })
 ```
 
 ### Payment
-Sends an asset from the source to the destination. Destination must exist and have a trustline.
+
+Sends asset to existing account. Destination must have a trustline for non-XLM assets.
+
 ```javascript
 Operation.payment({
   destination: "G...",
-  asset: new Asset("USDC", USDC_ISSUER), // or Asset.native()
+  asset: new Asset("USDC", USDC_ISSUER_MAINNET),
   amount: "100.50",
 })
 ```
 
 ### Path Payment Strict Send
-Sends exactly X of an asset, recipient gets at least Y of a different asset. Uses DEX for conversion.
+
+Send exactly X of one asset, receive at least Y of another. DEX handles conversion.
+
 ```javascript
 Operation.pathPaymentStrictSend({
   sendAsset: Asset.native(),
   sendAmount: "10",
   destination: "G...",
-  destAsset: new Asset("USDC", USDC_ISSUER),
-  destMin: "1.5", // Fails if < 1.5 USDC is received
-  path: [],       // Array of intermediate Assets (optional)
+  destAsset: new Asset("USDC", USDC_ISSUER_MAINNET),
+  destMin: "1.5",
+  path: [],
 })
 ```
 
 ### Path Payment Strict Receive
-Recipient gets exactly X of an asset, sender pays at most Y of a different asset.
+
+Receive exactly Y of one asset, spend at most X of another.
+
 ```javascript
 Operation.pathPaymentStrictReceive({
   sendAsset: Asset.native(),
-  sendMax: "11",  // Fails if > 11 XLM is spent
+  sendMax: "11",
   destination: "G...",
-  destAsset: new Asset("USDC", USDC_ISSUER),
+  destAsset: new Asset("USDC", USDC_ISSUER_MAINNET),
   destAmount: "1.5",
   path: [],
 })
@@ -84,43 +131,53 @@ Operation.pathPaymentStrictReceive({
 
 ---
 
-## Asset & Trustline Operations
+## Asset & trustline operations
 
 ### Change Trust
-Creates, updates, or deletes a trustline.
+
+Create, update, or delete a trustline. Set `limit` to `"0"` to delete (balance must be 0).
+
 ```javascript
 Operation.changeTrust({
-  asset: new Asset("USDC", USDC_ISSUER),
-  limit: "1000000", // Optional. Set to "0" to delete (if balance is 0)
+  asset: new Asset("USDC", USDC_ISSUER_MAINNET),
+  limit: "1000000",
 })
 ```
 
-### Set trustline flags (replaces deprecated Allow Trust)
-Issuers use **`setTrustLineFlags`** (modern path). The legacy **`allowTrust`** operation still exists in the protocol for backward compatibility but new code should follow current SDK / [list of operations](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations).
+### Set Trustline Flags
+
+Issuer operation — authorize, freeze, or configure trustlines. Modern replacement for the legacy `allowTrust` (still in protocol for backward compat).
+
 ```javascript
 Operation.setTrustLineFlags({
   trustor: "G_USER...",
-  asset: new Asset("USDC", USDC_ISSUER),
-  flags: { authorized: true }, // or { authorizedToMaintainLiabilities: true }
+  asset: new Asset("USDC", USDC_ISSUER_MAINNET),
+  flags: { authorized: true },
 })
 ```
 
+Available flags: `authorized`, `authorizedToMaintainLiabilities`, `clawbackEnabled`. Combine as needed.
+
 ### Clawback
-Used by issuers (with `AUTH_CLAWBACK_ENABLED`) to seize tokens from an account.
+
+Issuer seizes tokens from a holder. Requires `AUTH_CLAWBACK_ENABLED` on the issuing account.
+
 ```javascript
 Operation.clawback({
   from: "G_USER...",
-  asset: new Asset("USDC", USDC_ISSUER),
+  asset: new Asset("USDC", USDC_ISSUER_MAINNET),
   amount: "50",
 })
 ```
 
 ---
 
-## Account Management Operations
+## Account management
 
 ### Set Options
-Updates account configuration (signers, thresholds, domain, flags).
+
+Update signers, thresholds, domain, and issuer flags.
+
 ```javascript
 Operation.setOptions({
   masterWeight: 1,
@@ -135,63 +192,73 @@ Operation.setOptions({
 ```
 
 ### Account Merge
-Deletes the account and sends its remaining XLM to a destination. Only works if the account has no subentries (no trustlines, offers, data).
+
+Deletes the account and transfers remaining XLM to destination. Account must have zero subentries.
+
 ```javascript
-Operation.accountMerge({
-  destination: "G...",
-})
+Operation.accountMerge({ destination: "G..." })
 ```
 
 ### Manage Data
-Sets, updates, or deletes a key-value pair on the account. Values are base64 strings. Max 64 bytes per value.
+
+Set, update, or delete a key-value pair. Values are base64 strings, max 64 bytes. Costs +0.5 XLM reserve.
+
 ```javascript
 Operation.manageData({
   name: "kyc_status",
-  value: "verified", // Buffer or string. Null to delete.
+  value: "verified", // null to delete
 })
 ```
 
 ---
 
-## DEX & Liquidity Operations
+## DEX & liquidity
 
 ### Manage Sell Offer
-Creates or updates an order to sell asset A for asset B.
+
+Create or update a sell order. `offerId: "0"` = new, `>0` = update existing.
+
 ```javascript
 Operation.manageSellOffer({
   selling: Asset.native(),
-  buying: new Asset("USDC", USDC_ISSUER),
-  amount: "100", // Amount to sell
-  price: "0.15", // Price of 1 unit of selling in terms of buying
-  offerId: "0",  // 0 creates new. >0 updates existing.
+  buying: new Asset("USDC", USDC_ISSUER_MAINNET),
+  amount: "100",
+  price: "0.15",
+  offerId: "0",
 })
 ```
 
 ### Manage Buy Offer
-Creates or updates an order to buy asset A by selling asset B.
+
+Create or update a buy order.
+
 ```javascript
 Operation.manageBuyOffer({
   selling: Asset.native(),
-  buying: new Asset("USDC", USDC_ISSUER),
-  buyAmount: "15", // Amount to buy
+  buying: new Asset("USDC", USDC_ISSUER_MAINNET),
+  buyAmount: "15",
   price: "0.15",
   offerId: "0",
 })
 ```
 
 ### Create Passive Sell Offer
-Creates an offer that won't execute against a worse price, used by market makers.
+
+Won't execute against a price worse than `price`. Used by market makers.
+
 ```javascript
 Operation.createPassiveSellOffer({
   selling: Asset.native(),
-  buying: new Asset("USDC", USDC_ISSUER),
+  buying: new Asset("USDC", USDC_ISSUER_MAINNET),
   amount: "100",
   price: "0.15",
 })
 ```
 
 ### Liquidity Pool Deposit
-Deposits assets into an AMM.
+
+Deposit into an AMM pool. Requires the pool to already exist.
+
 ```javascript
 Operation.liquidityPoolDeposit({
   liquidityPoolId: poolIdHex,
@@ -203,11 +270,13 @@ Operation.liquidityPoolDeposit({
 ```
 
 ### Liquidity Pool Withdraw
-Withdraws assets from an AMM by burning pool shares.
+
+Burn pool shares to withdraw assets.
+
 ```javascript
 Operation.liquidityPoolWithdraw({
   liquidityPoolId: poolIdHex,
-  amount: "50", // Amount of pool shares to burn
+  amount: "50",
   minAmountA: "4",
   minAmountB: "40",
 })
@@ -215,77 +284,92 @@ Operation.liquidityPoolWithdraw({
 
 ---
 
-## Sponsorship Operations
+## Sponsorship
 
-Allows an account to pay the XLM minimum balance reserve for another account's data.
+Sponsor pays XLM reserves for another account's subentries. Both must sign.
 
 ```javascript
-// 1. Sponsor begins
-Operation.beginSponsoringFutureReserves({
-  sponsoredId: "G_USER...", // The account being sponsored
-})
-// 2. The sponsored action (e.g. create account, change trust)
-Operation.changeTrust({
-  asset: new Asset("USDC", USDC_ISSUER),
-  source: "G_USER...", // Executes under user's account
-})
-// 3. User ends sponsorship
-Operation.endSponsoringFutureReserves({
-  source: "G_USER...",
-})
+const tx = new TransactionBuilder(sponsorAccount, { fee: BASE_FEE, networkPassphrase: Networks.MAINNET })
+  .addOperation(Operation.beginSponsoringFutureReserves({ sponsoredId: "G_USER..." }))
+  .addOperation(Operation.changeTrust({ asset: usdc, source: "G_USER..." }))
+  .addOperation(Operation.endSponsoringFutureReserves({ source: "G_USER..." }))
+  .setTimeout(30)
+  .build();
+tx.sign(sponsorKeypair);
+tx.sign(userKeypair);
 ```
 
 ---
 
-## Soroban-related operations (classic transaction envelope)
+## Soroban operations (classic envelope)
 
-Protocol reference: [List of operations](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations) — **Invoke Host Function**, **Extend Footprint TTL**, **Restore Footprint**.
+### Invoke Host Function
 
-### Invoke host function (typical dapp path)
-
-Prefer the high-level **contract** helper in `@stellar/stellar-sdk` (builds `InvokeHostFunction` with correct XDR):
+Prefer `Contract.call()` for most cases:
 
 ```javascript
 import { Contract, nativeToScVal } from "@stellar/stellar-sdk";
 
 const contract = new Contract(contractId);
 const op = contract.call("my_fn", nativeToScVal(arg, { type: "..." }));
-// Add to TransactionBuilder, then simulate on Stellar RPC before submit — see /rpc/SKILL.md
+// simulate on Stellar RPC before submit
 ```
 
-Low-level `Operation.invokeHostFunction({ func, auth })` requires hand-built `xdr.HostFunction` and Soroban auth entries — use only when you are not using `Contract.call`. JS SDK reference: https://stellar.github.io/js-stellar-sdk/Operation.html
+Low-level `Operation.invokeHostFunction({ func, auth })` requires hand-built XDR — use only when `Contract.call` doesn't fit. SDK reference: https://stellar.github.io/js-stellar-sdk/Operation.html
 
-### Extend footprint TTL
+### Extend Footprint TTL
 
-Extends TTL for entries referenced in the transaction’s **read-only footprint** (see protocol doc: [Extend Footprint TTL](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations#extend-footprint-ttl)).
+Extends TTL for entries in the read-only footprint. `extendTo` is a target ledger sequence.
 
 ```javascript
-import { Operation } from "@stellar/stellar-sdk";
-
-Operation.extendFootprintTtl({
-  extendTo: 1_000_000, // target ledger sequence (protocol field "extendTo") — must match your SDK version’s opts shape
-});
+Operation.extendFootprintTtl({ extendTo: 1_000_000 });
 ```
 
-Confirm exact option names in your SDK: https://stellar.github.io/js-stellar-sdk/Operation.html#.extendFootprintTtl
+### Restore Footprint
 
-### Restore footprint
-
-Restores **archived** entries in the **read-write** footprint — [Restore Footprint](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations#restore-footprint).
+Restores archived entries in the read-write footprint before they can be read/written.
 
 ```javascript
-import { Operation } from "@stellar/stellar-sdk";
-
 Operation.restoreFootprint({});
 ```
 
 ---
 
-## Official documentation
+## Edge cases
 
-- List of operations: https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations  
-- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
-- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
+| Situation | What happens |
+|-----------|-------------|
+| Payment to unfunded account | `op_no_destination` — must `createAccount` first |
+| `changeTrust` with `limit: "0"` | Deletes trustline only if balance is zero |
+| Path payment with empty `path` | Uses direct DEX pair if it exists, else fails |
+| `accountMerge` with subentries | Fails — must remove all trustlines, offers, data first |
+| `manageSellOffer` with `amount: "0"` | Deletes the offer matching that `offerId` |
+| Sponsorship without sponsored account signing | Fails — both sponsor and sponsored must sign |
+| Clawback without `AUTH_CLAWBACK_ENABLED` | Fails — issuer must set the flag via `setOptions` |
+| `invokeHostFunction` without simulation | Fails at submission — always simulate on RPC first |
+
+---
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `op_no_destination` | Recipient doesn't exist | Use `createAccount` or fund first |
+| `op_low_reserve` | Below minimum balance | Fund more XLM or remove subentries |
+| `tx_bad_seq` | Wrong/reused sequence number | Re-fetch account before building tx |
+| `op_underfunded` | Insufficient balance | Check balance minus reserve + fees |
+| `op_no_trust` | Missing trustline | Add `changeTrust` before payment |
+| `op_line_full` | Trustline limit reached | Raise limit with `changeTrust` |
+| `op_cross_self` | Offer would trade with own offers | Cancel existing offer first |
+| `op_not_clawback_enabled` | Issuer lacks clawback flag | Set `AUTH_CLAWBACK_ENABLED` via `setOptions` |
+
+---
+
+## See also
+
+- `/accounts/SKILL.md` — account creation, multisig, sponsorship deep-dive
+- `/assets/SKILL.md` — asset issuance, trustlines, issuer configuration
+- [List of operations](https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations) — official protocol reference
 
 ---
 
