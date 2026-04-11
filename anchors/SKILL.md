@@ -9,123 +9,167 @@ description: Fiat on/off-ramps on Stellar. Integration flows, stellar.toml, and 
 
 ---
 
-## What is an Anchor?
+## When to use
 
-An **Anchor** is a regulated financial entity (like a bank, fintech, or payment processor) that bridges the Stellar network with the traditional financial system.
-
-Anchors do two things:
-1. **Hold fiat deposits** (e.g., USD in a bank account).
-2. **Issue fiat-backed tokens** on Stellar (e.g., USDC, ARST, BRL).
-
-When you deposit $100 via an anchor, they mint 100 fiat-tokens to your Stellar account. When you withdraw, you send 100 fiat-tokens to the anchor, they burn them, and wire $100 to your bank account.
+- Integrating fiat deposit/withdrawal into a wallet or app
+- Reading an anchor's endpoints and supported assets (`stellar.toml`)
+- Building an anchor (issuing fiat-backed tokens on-chain)
+- Working with cross-border payments or exchange rate quotes
 
 ---
 
-## Anchor Integration Standards (SEPs)
+## Quick reference
 
-If you are building a wallet or application and want to let users cash in/out, you use SEPs (Stellar Ecosystem Proposals).
-
-See `/seps/SKILL.md` for full technical details.
-
-| Standard | What it does |
-|----------|--------------|
-| **SEP-1** | `stellar.toml` — Find the anchor's API endpoints and assets |
-| **SEP-10**| Authentication — Prove you own a Stellar keypair using a signed challenge |
-| **SEP-24**| Hosted Deposit/Withdrawal — Anchor provides a web UI (iframe) for KYC and banking details |
-| **SEP-6** | Programmatic Deposit/Withdrawal — Pure API flow (no anchor UI) |
-| **SEP-12**| KYC API — Submit user identity data to the anchor programmatically |
-| **SEP-31**| Cross-border Payments — Direct anchor-to-anchor remittance API |
-| **SEP-38**| Quotes — Get exchange rates before initiating a transfer |
+| SEP | Purpose | When to use |
+|-----|---------|-------------|
+| SEP-1 | `stellar.toml` — discover anchor endpoints and assets | First step in any anchor integration |
+| SEP-10 | Auth — prove keypair ownership via signed challenge | Before calling any protected anchor API |
+| SEP-24 | Hosted deposit/withdrawal — anchor provides web UI for KYC and banking | Most wallets; simplest integration path |
+| SEP-6 | Programmatic deposit/withdrawal — pure API, no anchor UI | Full control over UX, no iframe |
+| SEP-12 | KYC API — submit user identity data programmatically | SEP-6 flows; pre-KYC before deposit/withdrawal |
+| SEP-31 | Cross-border payments — anchor-to-anchor remittance | B2B or remittance use cases |
+| SEP-38 | Quotes — get exchange rates before transferring | Multi-currency flows needing upfront rates |
 
 ---
 
-## The Typical SEP-24 Flow (Wallets)
+## stellar.toml (SEP-1)
 
-Most wallets implement SEP-24 to let users buy/sell assets.
+Entry point for any anchor integration. Hosted at `https://<domain>/.well-known/stellar.toml`.
 
-1. **Discovery:** Wallet reads `stellar.toml` of `example.com` to find the `TRANSFER_SERVER_SEP0024` endpoint.
-2. **Auth:** Wallet authenticates via SEP-10 and gets a JWT.
-3. **Initiate:** Wallet calls `/transactions/deposit/interactive`.
-4. **UI:** Wallet opens the returned URL in a browser/webview. The user fills out their bank details and KYC on the anchor's site.
-5. **Poll:** Wallet polls `/transaction?id=...` using the JWT.
-6. **Complete:** Anchor receives fiat and sends Stellar tokens to the user's account (Deposit). Or, user sends tokens and anchor wires fiat (Withdrawal).
-
----
-
-## Finding Anchors
-
-You can find available anchors and the assets they issue via the Stellar ecosystem directories:
-
-- **Stellar Expert:** `https://stellar.expert/explorer/public/asset` (Filter by verified issuers)
-- **Stellar Anchor Directory:** The SDF maintains lists of active anchors for different corridors (e.g., US, Europe, Latin America, Africa).
-
----
-
-## Building an Anchor
-
-If you are a financial institution wanting to become an anchor, you don't need to build the SEP endpoints from scratch.
-
-### Anchor Platform (SDF Recommended)
-
-The **Anchor Platform** is the SDF-maintained, production-ready solution for building anchor services. It is a Java-based SDK that implements SEP-1, 6, 10, 12, 24, 31, and 38.
-
-```bash
-# Anchor Platform uses Java — see the GitHub repo for setup
-git clone https://github.com/stellar/java-stellar-anchor-sdk
+```toml
+ACCOUNTS = "GCNZ...anchor_issuing,GABC...anchor_distribution"
+TRANSFER_SERVER_SEP0024 = "https://api.example.com/sep24"
+WEB_AUTH_ENDPOINT = "https://api.example.com/auth"
+KYC_SERVER = "https://api.example.com/sep12"
 ```
 
-GitHub: `https://github.com/stellar/java-stellar-anchor-sdk`
-Docs: `https://developers.stellar.org/docs/platforms/anchor-platform`
-
-> **Note:** The previous Python-based reference implementation (Polaris/django-polaris) is no longer actively recommended by SDF. Use Anchor Platform for new anchor deployments.
-
-### Terminology: "Ramps" (Anchors)
-The Stellar docs sidebar now uses **"Ramps (anchors)"** as the primary term. "Anchors" remains widely used in specs and code, but expect "ramps" to appear in newer documentation.
-
-### Additional Resources
-- **MoneyGram Access:** MoneyGram provides fiat on/off-ramp integration with Stellar — see official docs for the MoneyGram Access tutorial.
-- **Stellar Disbursement Platform (SDP):** SDF's bulk payment infrastructure for enterprises.
+Read at runtime:
+```javascript
+import { StellarToml } from "@stellar/stellar-sdk";
+const toml = await StellarToml.Resolver.resolve("example.com");
+toml.TRANSFER_SERVER_SEP0024;  // "https://api.example.com/sep24"
+```
 
 ---
 
-## Trustlines & Anchors
+## SEP-24 flow (hosted deposit/withdrawal)
 
-**Crucial:** A user cannot receive an anchor's token unless they have established a trustline for it.
+Standard wallet integration. Anchor provides the UI — you orchestrate the API calls.
 
-If a user does a SEP-24 deposit for `BRL` issued by `example.com`, the wallet must ensure the user has a `BRL` trustline to the issuer's public key *before* the anchor tries to send the funds, or the anchor's payment will fail (`op_no_trust`).
-
-Many anchors solve this by sponsoring the user's trustline creation fee or requiring the user to do it in the wallet UI before completing the flow.
-
----
-
-## Anchor Memos
-
-When a user *withdraws* tokens (sending them back to the anchor to get fiat), they must send the tokens to the anchor's distribution account.
-
-Because anchors use a single receiving account for thousands of users, **the transaction MUST include a specific Memo** (usually a Memo ID or Memo Hash) provided by the anchor's API. This memo tells the anchor which user's bank account should receive the fiat.
-
-**Forgetting the memo results in lost funds.**
+1. **Discovery** — resolve `stellar.toml` → `TRANSFER_SERVER_SEP0024`
+2. **Auth** — SEP-10 challenge → JWT
+3. **Initiate** — `POST /transactions/deposit/interactive` (or `/withdraw`)
+4. **UI** — open returned `url` in browser/webview (user completes KYC + banking details)
+5. **Poll** — `GET /transaction?id=...` with JWT until status is `completed`
 
 ```javascript
-// Example withdrawal payment to an anchor
+const response = await fetch(
+  `${transferServer}/transactions/deposit/interactive`,
+  { method: "POST", headers: { Authorization: `Bearer ${jwt}` }, body }
+);
+const { url, id } = await response.json();
+// Open url in webview, then poll GET /transaction?id=${id}
+```
+
+---
+
+## SEP-10 authentication
+
+Prove ownership of a Stellar keypair by signing a challenge. Returns a JWT for subsequent API calls.
+
+```javascript
+import { Sep10 } from "@stellar/stellar-sdk";
+
+const challenge = await Sep10.getChallenge(
+  "https://api.example.com/auth", serverKeypair.publicKey(), clientPublicKey
+);
+const signedChallenge = clientKeypair.sign(challenge);
+const { token } = await Sep10.verifyChallenge(
+  "https://api.example.com/auth", signedChallenge, serverKeypair
+);
+```
+
+---
+
+## Withdrawal memos
+
+When withdrawing tokens back to an anchor, the payment **must include a memo** (usually Memo ID or Hash) from the anchor's API. Anchors use a single receiving account — the memo identifies which user gets the fiat.
+
+**Missing memo = lost funds.**
+
+```javascript
 const tx = new TransactionBuilder(account, { fee: BASE_FEE })
   .addOperation(Operation.payment({
     destination: anchorAccountId,
     asset: anchorAsset,
     amount: "100",
   }))
-  .addMemo(Memo.text(withdrawalResponse.memo)) // CRITICAL
+  .addMemo(Memo.text(withdrawalResponse.memo))
   .build();
 ```
 
 ---
 
-## Official documentation
+## Building an anchor
 
-- Anchors (fundamentals): https://developers.stellar.org/docs/learn/fundamentals/anchors  
-- SEPs overview: https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals  
-- SEP specs (GitHub): https://github.com/stellar/stellar-protocol/tree/master/ecosystem  
-- Anchor testing tools: https://developers.stellar.org/docs/tools  
+SDF maintains the **Anchor Platform** (Java SDK) — production-ready implementation of SEP-1, 6, 10, 12, 24, 31, 38.
+
+```
+GitHub:  https://github.com/stellar/java-stellar-anchor-sdk
+Docs:    https://developers.stellar.org/docs/platforms/anchor-platform
+```
+
+Note: the legacy Python reference implementation (Polaris) is no longer recommended by SDF.
+
+Stellar docs now use "Ramps (anchors)" as the primary term in newer pages.
+
+---
+
+## Trustlines
+
+A user cannot receive an anchor's token without a trustline to that issuer. If the anchor sends tokens before the trustline exists, the payment fails (`op_no_trust`).
+
+Many anchors sponsor the trustline reserve or require wallet-side trustline creation before the deposit completes.
+
+---
+
+## Finding anchors
+
+- **Stellar Expert:** `https://stellar.expert/explorer/public/asset` — filter by verified issuers
+- **MoneyGram Access:** fiat on/off-ramp integration — see Stellar docs for tutorial
+- **Stellar Disbursement Platform (SDP):** SDF bulk payment infrastructure for enterprises
+
+---
+
+## Edge cases
+
+| Situation | What happens |
+|-----------|-------------|
+| Withdrawal payment without memo | Funds sent to anchor but cannot be matched to user — effectively lost |
+| No trustline when anchor sends tokens | `op_no_trust` — anchor payment fails |
+| SEP-10 challenge expired | Auth fails — re-fetch and re-sign the challenge |
+| Anchor returns `pending_user_transfer_start` | User must send tokens on-chain before anchor wires fiat (withdrawal) |
+| Wrong `TRANSFER_SERVER` vs `TRANSFER_SERVER_SEP0024` | Endpoint mismatch — SEP-24 calls fail with 404 |
+
+---
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `op_no_trust` | Recipient lacks trustline to issuer | Create trustline before initiating deposit |
+| `tx_failed` (missing memo) | Withdrawal sent without memo | Always attach memo from anchor's withdrawal response |
+| 401 on SEP-24 endpoints | Missing or expired JWT | Re-authenticate via SEP-10 |
+| 404 on interactive URL | Wrong `TRANSFER_SERVER_SEP0024` or anchor misconfigured | Verify `stellar.toml` and use correct endpoint |
+| KYC required during SEP-24 | Anchor needs identity verification | Redirect user to interactive URL to complete KYC |
+
+---
+
+## See also
+
+- `/seps/SKILL.md` — full SEP technical details and protocol specs
+- `/accounts/SKILL.md` — trustlines, signers, and account setup
+- Official docs: [Anchors](https://developers.stellar.org/docs/learn/fundamentals/anchors)
 
 ---
 
