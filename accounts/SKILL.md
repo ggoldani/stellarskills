@@ -34,7 +34,7 @@ const kp = Keypair.fromSecret("SCZANGBA5RLCQ6LXXPJ7FJZLOL3ZRIQGXKVBIMKTSLK5DGNEC
 Accounts do NOT exist until explicitly created and funded on-chain. Generating a keypair does not create an account.
 
 ### Fund with createAccount operation
-> **Horizon** is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations; this pattern is for legacy REST. Prefer [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) + [migration](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) for new apps.
+> **Horizon** is [legacy](https://developers.stellar.org/docs/data/apis/horizon) for new integrations; this pattern is for legacy REST. Prefer [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) + [migration](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) for new apps.
 
 ```javascript
 import { TransactionBuilder, Networks, Operation, Asset, BASE_FEE } from "@stellar/stellar-sdk";
@@ -278,7 +278,7 @@ For concurrent transactions:
 ```bash
 npm install @stellar/stellar-sdk        # JavaScript / TypeScript
 pip install stellar-sdk                 # Python
-go get github.com/stellar/go/clients/horizonclient  # Go
+go get github.com/stellar/go-stellar-sdk  # Go
 ```
 
 ---
@@ -287,7 +287,7 @@ go get github.com/stellar/go/clients/horizonclient  # Go
 
 - Stellar docs (root): https://developers.stellar.org/docs  
 - Accounts: https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts  
-- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
+- Horizon (legacy): https://developers.stellar.org/docs/data/apis/horizon  
 - Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
 - Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
 

@@ -16,7 +16,7 @@ Stellar is designed to be inexpensive. Fees exist primarily as a spam deterrent,
 On Stellar:
 - **Base Fee**: Applies to classic operations (payments, trustlines, etc.)
 - **Resource Fee**: Applies to Soroban smart contracts (CPU, memory, ledger I/O)
-- **Refunds**: You specify a maximum fee, but you are only charged the minimum necessary to be included in the ledger. The rest is refunded.
+- **Refunds**: You specify a maximum fee, but you are only charged the effective inclusion fee needed to clear the ledger, up to that cap. **Note:** For classic transactions, unused fee is refunded. For Soroban smart contracts, most resource fees are NOT refunded even if under-declared.
 
 ---
 
@@ -59,7 +59,7 @@ Always fetch current fee stats before building a transaction in production to av
 
 ```javascript
 import { Horizon, TransactionBuilder } from "@stellar/stellar-sdk";
-// Horizon is deprecated for new integrations — see https://developers.stellar.org/docs/data/apis/horizon
+// Horizon is legacy for new integrations — see https://developers.stellar.org/docs/data/apis/horizon
 // On-chain fee stats for new systems: use Stellar RPC / providers — https://developers.stellar.org/docs/data/apis/rpc/providers
 const server = new Horizon.Server("https://horizon.stellar.org");
 const feeStats = await server.feeStats();

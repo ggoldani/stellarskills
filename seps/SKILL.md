@@ -22,6 +22,8 @@ The most important for builders:
 - **SEP-31** — Cross-border payment API (sender to receiver via anchor)
 - **SEP-38** — Quote API (get exchange rates before transacting)
 
+**Important:** Individual SEP doc pages at `developers.stellar.org/docs/learn/fundamentals/sep-*` have been restructured. Use the [SEPs overview page](https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals) or the [GitHub repo](https://github.com/stellar/stellar-protocol/tree/master/ecosystem) for authoritative SEP specifications.
+
 ### Circle USDC issuers (for `asset_issuer` / `stellar:USDC:…` strings)
 
 Verify on https://developers.circle.com/stablecoins/usdc-contract-addresses :
@@ -393,6 +395,51 @@ When building an anchor or integrating with one:
 - [ ] Memo handling: always include memo when anchor specifies one
 - [ ] CORS headers on all API endpoints
 - [ ] Test with [Stellar Lab](https://lab.stellar.org) and/or a SEP-compatible wallet (verify current wallet URLs in the official Stellar docs / SEP references)
+
+---
+
+## Additional SEPs & CAPs (2024-2026)
+
+The following newer standards extend the core SEPs above:
+
+### SEP-41 — Token Interface
+Defines a standard interface for Soroban contract tokens (transfer, balance, allowance, decimals, name, symbol). The SAC (Stellar Asset Contract) implements this interface. See `/assets/SKILL.md`.
+
+### SEP-45 — Web Auth for Contract Accounts
+Extends SEP-10 authentication to support contract-based accounts (C... addresses), enabling Smart Account wallets to authenticate with anchors.
+
+### SEP-46 — Contract Metadata
+Standard for embedding metadata (name, symbol, decimals, description, interfaces) directly in WASM contract files.
+
+### SEP-48 — Contract Interface Specification
+Allows contracts to declare which interfaces they implement, enabling runtime interface discovery.
+
+### SEP-49 — Upgradeable Contracts
+Standard for contract upgrade patterns using deployer authorization.
+
+### SEP-50 — NFTs (Non-Fungible Tokens)
+Standard interface for NFTs on Soroban, building on SEP-41.
+
+### SEP-55 — Contract Build Verification
+Verification that a deployed WASM matches a known build source.
+
+### SEP-56 — Vault-Style Tokenized Products
+Standard for yield-bearing vault tokens (e.g., LP shares).
+
+### SEP-57 — T-REX Regulated Tokens
+Framework for regulated/permissioned token transfers.
+
+### Core Protocol Proposals (CAPs)
+CAPs govern protocol-level changes. Key recent CAPs:
+- **CAP-46**: Native contract spec types
+- **CAP-51**: Smart Accounts (Protocol 26)
+- **CAP-53**: Transaction V3 extensions
+- **CAP-58**: Configurable transaction limits
+- **CAP-59**: ZK proofs (verifiable state proofs)
+- **CAP-67**: Contract expiration improvements
+- **CAP-74/75**: Additional ZK/cryptography primitives
+
+For the full list, see: [stellar-protocol CAPs](https://github.com/stellar/stellar-protocol/tree/master/core/cap)
 
 ---
 

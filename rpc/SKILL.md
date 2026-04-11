@@ -11,7 +11,7 @@ description: Stellar RPC (JSON-RPC) for Soroban smart contracts — simulation, 
 
 ## What is Stellar RPC?
 
-Stellar RPC is the gateway to **Stellar smart contracts (Soroban)**. It is separate from **Horizon** (REST). Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations; see [migration from Horizon to RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc).
+Stellar RPC is the gateway to **Stellar smart contracts (Soroban)**. It is separate from **Horizon** (REST). Horizon is [legacy](https://developers.stellar.org/docs/data/apis/horizon) for new integrations; see [migration from Horizon to RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc).
 
 | Horizon (REST, legacy) | Stellar RPC (JSON-RPC) |
 |------------------------|-------------------------|
@@ -169,10 +169,10 @@ const response = await server.getEvents({
       type: "contract",
       contractIds: [contractId],
       topics: [
-        // Topic 1: "transfer" symbol
-        xdr.ScVal.scvSymbol("transfer").toXDR("base64"),
-        // Topic 2: wildcard
-        "*",
+        [
+          xdr.ScVal.scvSymbol("transfer").toXDR("base64"),
+          "*",
+        ],
       ],
     },
   ],
@@ -207,7 +207,7 @@ In the Stellar ecosystem, the standard indexers are **Mercury** and **Zephyr** (
 | `getTransaction` | Get status of submitted tx | Polling for completion |
 | `getLedgerEntries` | Fetch raw storage | Reading contract state cheaply |
 | `getEvents` | Fetch historical events | Indexing, UI updates |
-| `getFeeStats` | Current resource fee rates | Fee estimation |
+| `getFeeStats` | Inclusion fee distributions (p10-p99 percentiles) for Soroban and Stellar transactions | Fee estimation |
 
 ---
 

@@ -32,8 +32,13 @@ Instead of writing tokens or governance from scratch in Rust, you should use the
 - **Fungible Token**: Standard token with extensions for Burnable, Capped, Allowlist, and Blocklist.
 - **Non-Fungible Token (NFT)**: With Burnable, Enumerable, Consecutive (batch minting), and Royalties extensions.
 - **Stablecoin Token**: Specialized for fiat-backed assets (Burnable, Capped, Allowlist, Blocklist).
+  (Stablecoin is a configuration preset of Fungible Token, not a separate module)
+- **Governor**: On-chain governance with proposals, voting, and execution.
+- **Votes**: Delegation-based voting power with historical checkpoints.
+- **Cryptography**: Cryptographic primitives for Soroban contracts.
+- **Fee Abstraction**: Pay fees in tokens instead of XLM.
 - **RWA Token (ERC-3643)**: Advanced regulatory features (Identity Management, Compliance Framework, Transfer Controls, Freezing Mechanisms, Recovery System, Pausable, RBAC).
-- **Token Vault (SEP-56)**: Yield-bearing vaults that hold underlying assets while issuing hyperfungible vault shares.
+- **Vault (SEP-56)**: Yield-bearing vaults that hold underlying assets while issuing hyperfungible vault shares.
 
 ### Smart Accounts (Account Abstraction)
 Contract-based wallets built for flexible and programmable authorization. Separates signers, context rules (what they can do), and policies (how it's enforced - like multisig or spending limits).

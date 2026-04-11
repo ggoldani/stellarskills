@@ -11,8 +11,8 @@ description: HTTP 402 micropayments on Stellar via x402 — Soroban token transf
 
 ## Official documentation (always verify current APIs)
 
-- **x402 on Stellar:** https://developers.stellar.org/docs/build/apps/x402  
-- **Built on Stellar facilitator:** https://developers.stellar.org/docs/build/apps/x402/built-on-stellar  
+- **x402 on Stellar:** https://developers.stellar.org/docs/build/agentic-payments/x402  
+- **Built on Stellar facilitator:** https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar  
 - **Stellar x402 repository:** https://github.com/stellar/x402-stellar  
 - **Protocol spec:** https://x402.org  
 - **npm (Stellar implementation):** https://www.npmjs.com/package/@x402/stellar  
@@ -57,16 +57,18 @@ For exact TypeScript patterns (`x402Client`, `ExactStellarScheme`, server/facili
 ## 4. Minimal client pattern (illustrative)
 
 ```typescript
-import { x402Client } from "@x402/core/client";
+import { x402HTTPClient } from "@x402/fetch";
 import { createEd25519Signer } from "@x402/stellar";
 import { ExactStellarScheme } from "@x402/stellar/exact/client";
 
 const signer = createEd25519Signer(process.env.STELLAR_SECRET_KEY!, "stellar:testnet");
-const client = new x402Client().register("stellar:*", new ExactStellarScheme(signer));
+const client = new x402HTTPClient().register("stellar:*", new ExactStellarScheme(signer));
 // Use client + @x402/fetch or your HTTP layer per official examples.
 ```
 
 Use **`stellar:pubnet`** / **`stellar:testnet`** (CAIP-2 style identifiers) and pass a **custom RPC URL** on mainnet as required.
+
+**Server middleware:** For Express apps, use `@x402/express` with `paymentMiddlewareFromConfig` for automatic 402 negotiation.
 
 ---
 
@@ -87,7 +89,7 @@ x402 on Stellar often uses the **token contract** / SEP-41 interface — use pac
 
 For production, use the **Built on Stellar** facilitator flow documented here (includes integration with the **OpenZeppelin Relayer** for relaying transactions):
 
-https://developers.stellar.org/docs/build/apps/x402/built-on-stellar  
+https://developers.stellar.org/docs/build/agentic-payments/x402/built-on-stellar  
 
 Also see the launch post: https://stellar.org/blog/foundation-news/x402-on-stellar  
 

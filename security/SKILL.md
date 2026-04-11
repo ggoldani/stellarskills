@@ -42,48 +42,32 @@ If you need a user to authorize a subset of arguments, or a different internal a
 
 ## 2. Reentrancy
 
-Soroban does **NOT** prevent reentrancy inherently. If your contract calls another contract, that contract can call back into yours before your function finishes.
+**Soroban's synchronous execution model prevents cross-contract reentrancy** — when contract A calls contract B, B executes to completion before A resumes. There is no async/mempool-based reentrancy like on EVM. Self-reentrancy (recursive calls) is possible but architecturally limited.
 
-### The Vulnerability
-If you update state *after* making an external call, a malicious contract can re-enter your function and drain funds.
+### Why Checks-Effects-Interactions Still Matters
 
-```rust
-// VULNERABLE: State updated AFTER external call
-pub fn withdraw(env: Env, user: Address, amount: i128) {
-    user.require_auth();
-    let token = token::Client::new(&env, &token_id);
-
-    // External call (execution control passes to token contract)
-    token.transfer(&env.current_contract_address(), &user, &amount);
-
-    // State update (too late!)
-    let balance = get_balance(&env, &user);
-    set_balance(&env, &user, balance - amount);
-}
-```
-
-### The Fix (Checks-Effects-Interactions Pattern)
-Always update your internal state *before* calling external contracts.
+Even though cross-contract reentrancy isn't possible, the pattern is still **defense-in-depth best practice**:
 
 ```rust
-// SECURE: State updated BEFORE external call
+// GOOD: State updated BEFORE any external call
 pub fn withdraw(env: Env, user: Address, amount: i128) {
     user.require_auth();
-
-    // 1. Checks
     let balance = get_balance(&env, &user);
     if balance < amount { panic!("insufficient funds"); }
 
-    // 2. Effects (State Update)
+    // Effects (State Update) — BEFORE interactions
     set_balance(&env, &user, balance - amount);
 
-    // 3. Interactions (External Call)
+    // Interactions (External Call)
     let token = token::Client::new(&env, &token_id);
     token.transfer(&env.current_contract_address(), &user, &amount);
 }
 ```
 
----
+### Additional Security Advantages (vs EVM)
+- **No Delegate Call** — contracts cannot execute arbitrary code in another contract's context
+- **No Classically Exploitable Reentrancy** — synchronous model eliminates the attack vector that caused billions in EVM losses
+- **Explicit Auth** — `require_auth()` must be called explicitly, unlike implicit `msg.sender` checks
 
 ## 3. Arithmetic Overflows
 

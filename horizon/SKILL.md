@@ -1,17 +1,17 @@
 ---
 name: stellarskills-horizon
-description: Stellar's legacy REST API (Horizon) for classic protocol data. Deprecated for new integrations — prefer Stellar RPC; see /rpc/SKILL.md for smart contracts.
+description: Stellar's legacy REST API (Horizon) for classic protocol data. Legacy — prefer Stellar RPC for new integrations; see /rpc/SKILL.md for smart contracts.
 ---
 
 # STELLARSKILLS — Horizon API
 
-> **Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon)** for new integrations. Prefer **Stellar RPC** for new projects and follow the **[migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc)**. This skill documents Horizon for maintaining existing systems that still rely on its REST API.
+> **Horizon is [legacy](https://developers.stellar.org/docs/data/apis/horizon)** for new integrations. Prefer **Stellar RPC** for new projects and follow the **[migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc)**. This skill documents Horizon for maintaining existing systems that still rely on its REST API.
 
 ---
 
 ## What is Horizon?
 
-Horizon is the REST API gateway to the Stellar network. It serves the **classic protocol** — accounts, payments, offers, trustlines, and transaction submission. For **Soroban smart contracts**, use **Stellar RPC** (see `/rpc/SKILL.md`).
+Horizon is the REST API gateway to the Stellar network. It serves the **classic protocol** — accounts, payments, offers, trustlines, and transaction submission. Horizon is actively maintained. The official docs recommend Stellar RPC for new projects. For **Soroban smart contracts**, use **Stellar RPC** (see `/rpc/SKILL.md`).
 
 | Horizon (REST) | Stellar RPC (JSON-RPC) |
 |----------------|-------------------------|
@@ -30,6 +30,8 @@ Horizon is the REST API gateway to the Stellar network. It serves the **classic 
 | Testnet | `https://horizon-testnet.stellar.org` |
 
 SDF runs these for free with rate limits. For production, use a dedicated Horizon instance or provider (Blockdaemon, Validation Cloud, etc.).
+
+**Note:** On August 1, 2024, SDF-hosted Horizon instances truncated historical data to one year. For longer history, consider third-party providers.
 
 ---
 

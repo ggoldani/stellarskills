@@ -18,7 +18,7 @@ SDF officially maintains or heavily supports these SDKs for interacting with **H
 | **JavaScript / TS** | `@stellar/stellar-sdk` | Everything. Wallets, backend, frontend. |
 | **Rust** | `soroban-sdk` | Writing Soroban smart contracts. |
 | **Python** | `stellar-sdk` | Backend automation, data science. |
-| **Go** | `github.com/stellar/go` | High-performance backend services. |
+| **Go** | `github.com/stellar/go-stellar-sdk` | High-performance backend services. |
 | **Java** | `java-stellar-sdk` | Enterprise backends, Android. |
 | **Flutter / Dart** | `stellar_flutter_sdk` | Mobile app development. |
 | **iOS / Swift** | `stellar-ios-mac-sdk` | iOS app development. |
@@ -38,7 +38,7 @@ Check the current release: https://github.com/stellar/js-stellar-sdk/releases
 ### 1. Stellar CLI
 The Swiss Army knife for Soroban and Stellar development. Written in Rust.
 ```bash
-cargo install --locked stellar-cli --features opt
+cargo install --locked stellar-cli
 
 # Manage identities
 stellar keys generate alice
@@ -74,7 +74,6 @@ To view ledgers, accounts, transactions, and assets on-chain.
 | Explorer | URL | Best For |
 |----------|-----|----------|
 | **Stellar Expert** | `https://stellar.expert` | The gold standard. Asset stats, AMM pools, contract invocations, SEP discovery. |
-| **Steexp** | `https://steexp.com` | Simple, fast ledger exploration. |
 
 ---
 
@@ -85,6 +84,10 @@ To test your dApp, you need a wallet that supports Soroban and WalletConnect.
 | Wallet | Platform | Notes |
 |--------|----------|-------|
 | **Freighter** | Browser Extension | The MetaMask of Stellar. Built by SDF. Essential for testing web dApps. Supports testnet, futurenet, mainnet. |
+| **xBull** | Browser Extension | Popular alternative wallet with Soroban support. |
+| **Albedo** | Browser Extension | Clean UI with advanced features like multisig. |
+| **Rabet** | Browser + Mobile | Feature-rich wallet supporting Soroban and classic assets. |
+| **Hana** | Mobile | Mobile-first wallet with Soroban dApp support. |
 | **Lobstr** | Mobile / Web | The most popular consumer wallet. Supports classic assets, DEX, and WalletConnect. |
 | **Vibrant** | Mobile | USDC-centric consumer wallet. Good for testing SEP-24 fiat rails. |
 
@@ -94,7 +97,7 @@ To test your dApp, you need a wallet that supports Soroban and WalletConnect.
 
 You shouldn't use the SDF public endpoints for heavy production traffic. Use an RPC URL from **[Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers)**.
 
-Examples (non-exhaustive): **Validation Cloud**, **Blockdaemon**, **Tatum**, **QuickNode**.
+Examples (non-exhaustive): **Validation Cloud**, **Blockdaemon**, **QuickNode**, **NowNodes**, **Gateway**, **Ankr**, **Infstones**.
 
 ---
 
@@ -103,7 +106,7 @@ Examples (non-exhaustive): **Validation Cloud**, **Blockdaemon**, **Tatum**, **Q
 - Stellar docs: https://developers.stellar.org/docs  
 - Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
 - Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
-- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
+- Horizon (legacy): https://developers.stellar.org/docs/data/apis/horizon  
 - JS SDK releases: https://github.com/stellar/js-stellar-sdk/releases  
 
 ---
@@ -112,7 +115,7 @@ Examples (non-exhaustive): **Validation Cloud**, **Blockdaemon**, **Tatum**, **Q
 
 When you don't know how to implement something, look here:
 
-- **Polaris** (`stellar/django-polaris`): Reference implementation for Anchors (SEPs).
+- **Anchor Platform** (`stellar/java-stellar-anchor-sdk`): SDF-recommended solution for building Anchors (SEPs).
 - **Soroban Example dApp** (`stellar/soroban-example-dapp`): End-to-end React + Soroban contract example.
 - **Freighter API** (`stellar/freighter`): How the browser extension works.
 

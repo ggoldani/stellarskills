@@ -137,7 +137,7 @@ const strictReceive = Operation.pathPaymentStrictReceive({
 
 ### Path Finding
 
-You usually don't need to specify the `path` array manually. **Horizon** can compute paths across order books and AMMs (REST). Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for **new** data integrations — prefer **[Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc)** and the [migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) when building new indexers or backends; this pattern remains valid for legacy stacks.
+You usually don't need to specify the `path` array manually. **Horizon** can compute paths across order books and AMMs (REST). Horizon is [legacy](https://developers.stellar.org/docs/data/apis/horizon) — prefer **[Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc)** and the [migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) when building new indexers or backends; this pattern remains valid for legacy stacks.
 
 ```javascript
 const server = new Horizon.Server("https://horizon.stellar.org");
@@ -174,7 +174,7 @@ Pass `bestPath.path` into the `path` array of your Operation.
 
 - SDEX & liquidity pools: https://developers.stellar.org/docs/learn/fundamentals/liquidity-on-stellar-sdex-liquidity-pools  
 - List of operations: https://developers.stellar.org/docs/learn/fundamentals/transactions/list-of-operations  
-- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
+- Horizon (legacy): https://developers.stellar.org/docs/data/apis/horizon  
 - Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
 
 ---

@@ -60,7 +60,7 @@ const BRL  = new Asset("BRL",  "GDVKY2GU2DRXWTBEYJJWSFXIGBZV6AZNBVVSUHEPZI54LIS6
 
 ## Trustlines
 
-> Examples below use **Horizon** (`Horizon.Server`) for sequence load and submit. Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations — use [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) + [migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) for new work.
+> Examples below use **Horizon** (`Horizon.Server`) for sequence load and submit. Horizon is [legacy](https://developers.stellar.org/docs/data/apis/horizon) — prefer [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) + [migration guide](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) for new work.
 
 **Before an account can receive any non-native asset, it must have a trustline to that asset.**
 

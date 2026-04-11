@@ -26,7 +26,7 @@ Key differences from EVM:
 
 ```bash
 # Install Stellar CLI
-cargo install --locked stellar-cli --features opt
+cargo install --locked stellar-cli
 
 # Create new contract project
 stellar contract init my_contract
@@ -41,10 +41,10 @@ crate-type = ["cdylib"]
 [dependencies]
 # Pin to the soroban-sdk release that matches your Protocol / `stellar contract build` toolchain.
 # Latest on docs.rs is often ahead of testnet — verify: https://docs.rs/soroban-sdk/latest/soroban_sdk/
-soroban-sdk = { version = "25.3.0", features = ["alloc"] }
+soroban-sdk = { version = "25.3.1" }
 
 [dev-dependencies]
-soroban-sdk = { version = "25.3.0", features = ["testutils", "alloc"] }
+soroban-sdk = { version = "25.3.1", features = ["testutils"] }
 ```
 
 ---
@@ -57,6 +57,7 @@ use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, sy
 
 // Define storage key types
 #[contracttype]
+#[derive(Clone)]
 pub enum DataKey {
     Balance(Address),
     Admin,
@@ -314,16 +315,8 @@ fn only_admin(env: &Env) {
 }
 ```
 
-### Reentrancy Protection
-Soroban is NOT inherently reentrancy-safe in all cases. Use a lock flag for sensitive operations:
-```rust
-fn get_and_lock(env: &Env) {
-    if env.storage().temporary().has(&DataKey::Lock) {
-        panic!("reentrant call");
-    }
-    env.storage().temporary().set(&DataKey::Lock, &true);
-}
-```
+### Reentrancy (Synchronous Model)
+Soroban's synchronous execution prevents cross-contract reentrancy (unlike EVM). Self-reentrancy via recursion is possible but architecturally limited. See `/security/SKILL.md` for details. The Checks-Effects-Interactions pattern remains defense-in-depth best practice.
 
 ### Safe Integer Math
 Rust's default integer overflow panics in debug mode and wraps in release. Use checked arithmetic:

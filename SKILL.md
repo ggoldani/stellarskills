@@ -55,6 +55,8 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 | Soroban smart contracts (Rust/WASM) | `raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md` |
 | Soroban security patterns, auth, reentrancy | `raw.githubusercontent.com/ggoldani/stellarskills/main/security/SKILL.md` |
 | Testing Soroban contracts, Stellar CLI, testnet | `raw.githubusercontent.com/ggoldani/stellarskills/main/testing/SKILL.md` |
+| Soroban storage types, TTL/rent, best practices | `raw.githubusercontent.com/ggoldani/stellarskills/main/storage/SKILL.md` |
+| Smart Accounts (Protocol 26), passkey wallets, programmable auth | `raw.githubusercontent.com/ggoldani/stellarskills/main/smart-accounts/SKILL.md` |
 
 ### Payments & Anchors
 | Task | Fetch |
@@ -67,6 +69,9 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 |------|-------|
 | SDKs, wallets, explorers, Stellar Lab, CLI | `raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md` |
 | Frontend integration — Freighter, SEP-10 auth, browser SDK | `raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md` |
+| Local development node (Quickstart Docker, sandbox) | `raw.githubusercontent.com/ggoldani/stellarskills/main/local-node/SKILL.md` |
+| Data indexers (Mercury, Hubble, SubQuery) | `raw.githubusercontent.com/ggoldani/stellarskills/main/data-indexers/SKILL.md` |
+| Scaffold Stellar — full-stack dApp scaffolding | `raw.githubusercontent.com/ggoldani/stellarskills/main/scaffold-stellar/SKILL.md` |
 | x402 HTTP micropayments on Stellar (`@x402/stellar`, facilitator) | `raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md` |
 | OpenZeppelin audited contracts, SDKs, and Contract Wizard | `raw.githubusercontent.com/ggoldani/stellarskills/main/openzeppelin/SKILL.md` |
 
@@ -82,7 +87,7 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 ### Build a payment app
 1. Fetch `/accounts/SKILL.md` — understand account creation and minimum balance
 2. Fetch `/assets/SKILL.md` — understand trustlines if using non-XLM assets
-3. Fetch `/rpc/SKILL.md` — prefer **Stellar RPC** for new work; fetch `/horizon/SKILL.md` only if you must integrate with the legacy REST API (Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon); [migrate to RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc))
+3. Fetch `/rpc/SKILL.md` — prefer **Stellar RPC** for new work; fetch `/horizon/SKILL.md` only if you must integrate with the legacy REST API (Horizon is [legacy](https://developers.stellar.org/docs/data/apis/horizon); [migrate to RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc))
 4. Fetch `/seps/SKILL.md` — if connecting to fiat on/off-ramps
 
 ### Build a Soroban smart contract
@@ -113,7 +118,7 @@ A Stellar transaction can contain up to 100 operations. Either all succeed or al
 Base fee is 100 stroops (0.00001 XLM) per operation. Soroban fees are slightly higher but still sub-cent. Stellar is genuinely cheap — this is not marketing.
 
 **5. Stellar RPC vs Horizon.**
-**Stellar RPC** (JSON-RPC) is the supported API for smart contracts and the direction of travel for on-chain data access. **Horizon** (REST) still serves the classic protocol but is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new integrations — [migrate to Stellar RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) when possible.
+**Stellar RPC** (JSON-RPC) is the supported API for smart contracts and the direction of travel for on-chain data access. **Horizon** (REST) still serves the classic protocol but is [legacy](https://developers.stellar.org/docs/data/apis/horizon) for existing integrations — [migrate to Stellar RPC](https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc) when possible.
 
 **6. Testnet resets periodically.**
 Stellar testnet resets periodically. Do not store testnet state long-term. Use [Horizon testnet](https://horizon-testnet.stellar.org) only for legacy REST; for **Stellar RPC**, choose an endpoint from [RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers) (or the SDF testnet RPC host for light dev). **Futurenet** is for bleeding-edge preview features.
@@ -131,16 +136,16 @@ Every transaction must be signed with the correct network passphrase:
 |----------|-----|
 | Stellar Docs (root) | https://developers.stellar.org/docs |
 | Stellar RPC (overview) | https://developers.stellar.org/docs/data/apis/rpc |
-| Horizon (deprecated) | https://developers.stellar.org/docs/data/apis/horizon |
+| Horizon (legacy) | https://developers.stellar.org/docs/data/apis/horizon |
 | Horizon → RPC migration | https://developers.stellar.org/docs/data/apis/migrate-from-horizon-to-rpc |
 | Stellar RPC providers (Testnet / Mainnet / Futurenet) | https://developers.stellar.org/docs/data/apis/rpc/providers |
 | Network resource limits & fees | https://developers.stellar.org/docs/networks/resource-limits-fees |
 | Fees & metering (fundamentals) | https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering |
-| x402 on Stellar | https://developers.stellar.org/docs/build/apps/x402 |
+| x402 on Stellar | https://developers.stellar.org/docs/build/agentic-payments/x402 |
 | Horizon Mainnet (legacy REST) | https://horizon.stellar.org |
 | Horizon Testnet (legacy REST) | https://horizon-testnet.stellar.org |
 | Stellar RPC (pick an endpoint) | Prefer a URL from [RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers) (Blockdaemon, Validation Cloud, QuickNode, etc.). SDF also exposes a public **testnet** JSON-RPC host (`https://soroban-testnet.stellar.org`) for development — not for production load. |
-| JavaScript SDK (check latest release) | https://github.com/stellar/js-stellar-sdk/releases (e.g. **v14.6.1** as of Mar 2026) |
+| JavaScript SDK (check latest release) | https://github.com/stellar/js-stellar-sdk/releases (e.g. **v15.0.1** (Protocol 26) as of Mar 2026) |
 | Stellar Lab | https://lab.stellar.org |
 | Stellar Expert (Explorer) | https://stellar.expert |
 | Circle USDC contract addresses (incl. Stellar issuers) | https://developers.circle.com/stablecoins/usdc-contract-addresses |

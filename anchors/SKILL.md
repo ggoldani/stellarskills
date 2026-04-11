@@ -65,19 +65,26 @@ You can find available anchors and the assets they issue via the Stellar ecosyst
 
 If you are a financial institution wanting to become an anchor, you don't need to build the SEP endpoints from scratch.
 
-### The Polaris Project
-Polaris is an open-source Django (Python) app maintained by the Stellar Development Foundation. It implements SEP-1, 6, 10, 12, 24, 31, and 38 out of the box.
+### Anchor Platform (SDF Recommended)
 
-You only write the "glue" code connecting Polaris to your bank's API and your KYC provider.
+The **Anchor Platform** is the SDF-maintained, production-ready solution for building anchor services. It is a Java-based SDK that implements SEP-1, 6, 10, 12, 24, 31, and 38.
 
 ```bash
-pip install django-polaris
+# Anchor Platform uses Java — see the GitHub repo for setup
+git clone https://github.com/stellar/java-stellar-anchor-sdk
 ```
 
-GitHub: `https://github.com/stellar/django-polaris`
+GitHub: `https://github.com/stellar/java-stellar-anchor-sdk`
+Docs: `https://developers.stellar.org/docs/platforms/anchor-platform`
 
-### Go / Java / Node
-There are also reference implementations and SDKs available in Go, Java, and Node.js for building custom anchor services.
+> **Note:** The previous Python-based reference implementation (Polaris/django-polaris) is no longer actively recommended by SDF. Use Anchor Platform for new anchor deployments.
+
+### Terminology: "Ramps" (Anchors)
+The Stellar docs sidebar now uses **"Ramps (anchors)"** as the primary term. "Anchors" remains widely used in specs and code, but expect "ramps" to appear in newer documentation.
+
+### Additional Resources
+- **MoneyGram Access:** MoneyGram provides fiat on/off-ramp integration with Stellar — see official docs for the MoneyGram Access tutorial.
+- **Stellar Disbursement Platform (SDP):** SDF's bulk payment infrastructure for enterprises.
 
 ---
 
@@ -118,8 +125,7 @@ const tx = new TransactionBuilder(account, { fee: BASE_FEE })
 - Anchors (fundamentals): https://developers.stellar.org/docs/learn/fundamentals/anchors  
 - SEPs overview: https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals  
 - SEP specs (GitHub): https://github.com/stellar/stellar-protocol/tree/master/ecosystem  
-- Anchor testing tools: https://developers.stellar.org/docs/tools/developer-tools/anchor-tools  
-- Polaris (reference server): https://github.com/stellar/django-polaris  
+- Anchor testing tools: https://developers.stellar.org/docs/tools  
 
 ---
 

@@ -24,7 +24,7 @@ In your `Cargo.toml`, ensure `testutils` is enabled for dev:
 ```toml
 [dev-dependencies]
 # Must match the `soroban-sdk` version your contracts use (see /soroban/SKILL.md and https://docs.rs/soroban-sdk/latest/soroban_sdk/)
-soroban-sdk = { version = "25.3.0", features = ["testutils"] }
+soroban-sdk = { version = "25.3.1", features = ["testutils"] }
 ```
 
 ### Basic Test Structure
@@ -42,7 +42,7 @@ fn test_deposit_and_withdraw() {
     let env = Env::default();
 
     // 2. Mock contract deployment
-    let contract_id = env.register_contract(None, MyContract);
+    let contract_id = env.register(MyContract, ());
 
     // 3. Create a client to interact with the contract
     let client = MyContractClient::new(&env, &contract_id);
@@ -92,6 +92,8 @@ assert_eq!(
 );
 ```
 
+**Tip:** For more robust auth testing, consider using the `MockAuth` / `MockAuthInvoke` structs available in newer soroban-sdk versions — they provide specific auth scenario testing without raw tuple assertions.
+
 ### Testing Panics (Expected Failures)
 
 Use `#[should_panic(expected = "...")]` to test that your contract correctly reverts on invalid input or unauthorized access.
@@ -101,7 +103,7 @@ Use `#[should_panic(expected = "...")]` to test that your contract correctly rev
 #[should_panic(expected = "insufficient funds")]
 fn test_withdraw_too_much() {
     let env = Env::default();
-    let contract_id = env.register_contract(None, MyContract);
+    let contract_id = env.register(MyContract, ());
     let client = MyContractClient::new(&env, &contract_id);
     let user = Address::generate(&env);
 
@@ -143,7 +145,7 @@ fn test_with_token() {
     token_client.mint(&user, &1000);
 
     // Deploy your contract
-    let my_contract_id = env.register_contract(None, MyContract);
+    let my_contract_id = env.register(MyContract, ());
     let client = MyContractClient::new(&env, &my_contract_id);
 
     // Now you can pass `token_id` into your contract functions

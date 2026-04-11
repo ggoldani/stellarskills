@@ -33,7 +33,7 @@ You should build on Stellar if your application involves:
 - **EVM/L2s**: Variable finality (often minutes or days for absolute settlement on L1).
 
 ### 2. The Mempool
-- **Stellar**: There is no public mempool. Transactions are submitted to **Stellar RPC** (JSON-RPC) and/or **Horizon** (legacy REST), then broadcast to validators and included in the next ledger (typically a few seconds). This eliminates MEV (Miner Extractable Value) like front-running and sandwich attacks on a public mempool. New integrations should use **Stellar RPC**; Horizon is [deprecated](https://developers.stellar.org/docs/data/apis/horizon) for new data APIs.
+- **Stellar**: There is no public mempool. Transactions are submitted to **Stellar RPC** (JSON-RPC) and/or **Horizon** (legacy REST), then broadcast to validators and included in the next ledger (typically a few seconds). This eliminates MEV (Miner Extractable Value) like front-running and sandwich attacks on a public mempool. New integrations should use **Stellar RPC**; Horizon is [legacy](https://developers.stellar.org/docs/data/apis/horizon) for new data APIs.
 - **Ethereum/Solana**: Public mempool creates a dark forest of MEV bots.
 
 ### 3. State Management (Accounts vs Wallets)
@@ -74,7 +74,7 @@ Do not use Stellar if:
 
 - Stellar docs: https://developers.stellar.org/docs  
 - Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
-- Horizon (deprecated): https://developers.stellar.org/docs/data/apis/horizon  
+- Horizon (legacy): https://developers.stellar.org/docs/data/apis/horizon  
 
 ---
 

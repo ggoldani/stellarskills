@@ -40,8 +40,8 @@ const kit = new StellarWalletsKit({
 await kit.openModal({
   onWalletSelected: async (option) => {
     kit.setWallet(option.id);
-    const publicKey = await kit.getPublicKey();
-    console.log(`Connected with ${option.name}: ${publicKey}`);
+    const { address } = await kit.getAddress();
+    console.log(`Connected with ${option.name}: ${address}`);
   }
 });
 ```
@@ -56,7 +56,7 @@ Once connected, you can sign XDR transactions agnostically. The kit handles the 
 import { TransactionBuilder, Networks, BASE_FEE, Operation, Asset, Horizon } from "@stellar/stellar-sdk";
 
 // 1. Build the transaction — load sequence via Horizon (legacy) or Stellar RPC (`getAccount` on SorobanRpc.Server)
-// Horizon: https://developers.stellar.org/docs/data/apis/horizon (deprecated for new integrations)
+// Horizon: https://developers.stellar.org/docs/data/apis/horizon (legacy — prefer Stellar RPC for new integrations)
 const horizonServer = new Horizon.Server("https://horizon-testnet.stellar.org");
 const account = await horizonServer.loadAccount(userPublicKey);
 
@@ -146,7 +146,7 @@ const sendResponse = await rpcServer.sendTransaction(signedTx);
 - Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
 - Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
 - Smart contracts overview: https://developers.stellar.org/docs/build/smart-contracts/overview  
-- JS SDK releases: https://github.com/stellar/js-stellar-sdk/releases (verify current tag, e.g. **v14.6.1**)  
+- JS SDK releases: https://github.com/stellar/js-stellar-sdk/releases (verify current tag, e.g. **v15.0.1** (Protocol 26))  
 
 ---
 

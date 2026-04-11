@@ -29,6 +29,7 @@ In Soroban, you query the ledger by passing a typed "Key". Best practice is to d
 use soroban_sdk::{contracttype, Address, String};
 
 #[contracttype]
+#[derive(Clone)]
 pub enum DataKey {
     Admin,                  // A single singleton key
     Balance(Address),       // A dynamically generated key per user
@@ -126,6 +127,21 @@ env.storage().persistent().extend_ttl(
     1_000_000, // min threshold (e.g. 2 months)
     2_000_000, // target (e.g. 4 months)
 );
+```
+
+### Reading TTL
+You can check remaining TTL on persistent entries:
+```rust
+let ttl = env.storage().persistent().get_ttl(&key);
+let live_until = env.storage().persistent().get_live_until_ledger(&key);
+```
+For conditional extension (more efficient than unconditional):
+```rust
+const MIN_TTL: u32 = 5000;
+let current_ttl = env.storage().persistent().get_ttl(&key);
+if current_ttl < MIN_TTL {
+    env.storage().persistent().extend_ttl(&key, MIN_TTL, 100000);
+}
 ```
 
 ---
