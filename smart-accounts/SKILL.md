@@ -202,7 +202,7 @@ Configure a relayer to pay transaction fees on behalf of the smart account user.
 ```typescript
 const kit = new SmartAccountKit({
   // ... other config
-  relayerUrl: 'https://your-relayer.example.com',
+  relayerUrl: 'https://relay.example.com',  // your deployed relayer URL
 });
 
 // Transactions submitted via signAndSubmit will be gasless

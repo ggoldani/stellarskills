@@ -12,6 +12,8 @@ description: Stellar at a glance — key differentiators vs EVM and Solana for a
 ## When to use
 
 - Evaluating whether Stellar fits a project's requirements
+- Comparing Stellar against EVM or Solana for a payments, stablecoin, or RWA product
+- Deciding whether built-in DEX, trustlines, and anchor standards matter for the use case
 
 ---
 
