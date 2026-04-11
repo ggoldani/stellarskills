@@ -1,454 +1,183 @@
 ---
 name: stellarskills-seps
-description: SEP-1 (stellar.toml), SEP-6, SEP-10 (auth), SEP-12 (KYC), SEP-24, SEP-31, SEP-38 — the interoperability standards that power Stellar's payment rails.
+description: SEP-1, SEP-6, SEP-10, SEP-12, SEP-24, SEP-31, SEP-38 — Stellar interoperability standards for anchors, wallets, and payment rails.
 ---
 
-# STELLARSKILLS — SEPs (Stellar Ecosystem Proposals)
+# STELLARSKILLS — SEPs
 
-> SEP-1 (stellar.toml), SEP-6, SEP-10 (auth), SEP-12 (KYC), SEP-24, SEP-31, SEP-38 — the interoperability standards that power Stellar's payment rails.
+> SEP-1, SEP-6, SEP-10, SEP-12, SEP-24, SEP-31, SEP-38 — interoperability standards for Stellar payment rails.
 
 ---
 
-## What Are SEPs?
+## When to use
 
-SEPs (Stellar Ecosystem Proposals) are interoperability standards, similar to EIPs on Ethereum. They define how wallets, anchors, exchanges, and applications communicate. If you're building payments, on/off-ramps, or any financial product on Stellar, you will interact with SEPs.
+- Integrating deposit/withdrawal with an anchor (SEP-6 or SEP-24)
+- Authenticating a Stellar keypair with an anchor service (SEP-10)
+- Getting exchange quotes before transacting (SEP-38)
+- Building cross-border sender-to-receiver payments (SEP-31)
+- Serving `stellar.toml` for service discovery (SEP-1)
 
-The most important for builders:
-- **SEP-1** — `stellar.toml` discovery file (everyone needs this)
-- **SEP-10** — Authentication (needed by SEP-6, SEP-24, SEP-31, SEP-38)
-- **SEP-6** — Programmatic deposit/withdrawal API
-- **SEP-24** — Hosted deposit/withdrawal (interactive, iframe/popup)
-- **SEP-12** — KYC data exchange
-- **SEP-31** — Cross-border payment API (sender to receiver via anchor)
-- **SEP-38** — Quote API (get exchange rates before transacting)
+---
 
-**Important:** Individual SEP doc pages at `developers.stellar.org/docs/learn/fundamentals/sep-*` have been restructured. Use the [SEPs overview page](https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals) or the [GitHub repo](https://github.com/stellar/stellar-protocol/tree/master/ecosystem) for authoritative SEP specifications.
+## Quick reference
 
-### Circle USDC issuers (for `asset_issuer` / `stellar:USDC:…` strings)
+| SEP | Name | Purpose | When to use |
+|-----|------|---------|-------------|
+| 1 | stellar.toml | Service & asset discovery file | Every Stellar service must serve one |
+| 6 | Transfer API | Programmatic (non-interactive) deposit/withdraw | Server-to-server, no UI needed |
+| 10 | Web Auth | Challenge-response authentication | Required before any SEP-6/24/31/38 call |
+| 12 | KYC API | Submit and query customer identity data | Anchor requires KYC verification |
+| 24 | Interactive Transfer | Hosted deposit/withdraw via popup/iframe | User must fill forms, 2FA, or bank input |
+| 31 | Cross-Border | Anchor-to-anchor international payments | Sender in country A → recipient in country B |
+| 38 | Quote API | Get exchange rates and firm quotes | Need price before committing to trade |
+| 41 | Token Interface | Standard Soroban token contract (SAC) | Building or interacting with Soroban tokens |
+| 45 | Web Auth (Contracts) | SEP-10 for contract accounts (C...) | Smart Account wallet auth with anchors |
+| 46 | Contract Metadata | Embed metadata in WASM files | Publishing contracts with self-describing metadata |
+| 48 | Interface Discovery | Contracts declare implemented interfaces | Runtime interface detection |
+| 49 | Upgradeable Contracts | Contract upgrade patterns | Deploying contracts that need future upgrades |
+| 50 | NFTs | Non-fungible token standard on Soroban | Building NFTs, building on SEP-41 |
+| 55 | Build Verification | Verify deployed WASM matches source | Proving a contract's build provenance |
 
-Verify on https://developers.circle.com/stablecoins/usdc-contract-addresses :
+### Circle USDC issuers
 
 | Network | Issuer |
 |---------|--------|
-| **Mainnet** | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
-| **Testnet** | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+| Mainnet | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+| Testnet | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
 
-```javascript
-const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN"; // mainnet; use testnet issuer on testnet
-```
-
-**Stellar docs (SEPs overview):** https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals  
+Verify: https://developers.circle.com/stablecoins/usdc-contract-addresses
 
 ---
 
-## SEP-1 — stellar.toml
+## Key SEP details
 
-Every Stellar service MUST have a `stellar.toml` file served at:
-```
-https://yourdomain.com/.well-known/stellar.toml
-```
+### SEP-10 — Challenge-response authentication
 
-This is how wallets, clients, and other services discover your endpoints, assets, and accounts.
-
-### Minimal stellar.toml for an anchor
-```toml
-VERSION="2.0.0"
-NETWORK_PASSPHRASE="Public Global Stellar Network ; September 2015"
-ACCOUNTS=["GISSUER_ADDRESS", "GDISTRIBUTOR_ADDRESS"]
-SIGNING_KEY="GSIGNING_KEY"  # used for SEP-10 challenges
-
-[DOCUMENTATION]
-ORG_NAME="Your Company"
-ORG_URL="https://yourdomain.com"
-
-[[PRINCIPALS]]
-name="Jane Doe"
-email="jane@yourdomain.com"
-
-[[CURRENCIES]]
-code="USDBRL"
-issuer="GISSUER_ADDRESS"
-display_decimals=2
-name="USD-BRL Stablecoin"
-desc="Dollar-pegged token redeemable for BRL via anchor"
-is_asset_anchored=true
-anchor_asset_type="fiat"
-anchor_asset="BRL"
-redemption_instructions="https://yourdomain.com/redeem"
-
-[TRANSFER_SERVER]
-TRANSFER_SERVER="https://api.yourdomain.com"               # SEP-6
-
-[TRANSFER_SERVER_SEP0024]
-TRANSFER_SERVER_SEP0024="https://api.yourdomain.com"       # SEP-24
-
-[DIRECT_PAYMENT_SERVER]
-DIRECT_PAYMENT_SERVER="https://api.yourdomain.com"         # SEP-31
-
-[ANCHOR_QUOTE_SERVER]
-ANCHOR_QUOTE_SERVER="https://api.yourdomain.com"           # SEP-38
-
-[WEB_AUTH_ENDPOINT]
-WEB_AUTH_ENDPOINT="https://api.yourdomain.com/auth"        # SEP-10
-```
-
-### CORS Headers Required
-Your `stellar.toml` endpoint must return:
-```
-Access-Control-Allow-Origin: *
-```
-
----
-
-## SEP-10 — Stellar Web Authentication
-
-SEP-10 is a challenge-response authentication mechanism. It proves that a client controls a Stellar keypair WITHOUT submitting a real transaction to the network.
-
-Used as the auth layer for SEP-6, SEP-24, SEP-31, SEP-38.
-
-### Flow
+Prerequisite for SEP-6, SEP-24, SEP-31, SEP-38. Proves keypair ownership without on-chain transaction.
 
 ```
-1. Client → GET /auth?account=G...           → Anchor returns challenge transaction (XDR)
-2. Client signs the challenge transaction     → (no broadcast, just sign)
-3. Client → POST /auth { transaction: XDR }  → Anchor verifies, returns JWT
-4. Client uses JWT in subsequent API calls    → Authorization: Bearer <jwt>
+1. Client → GET /auth?account=G...           → Challenge XDR
+2. Client signs challenge                    → No broadcast
+3. Client → POST /auth { transaction: XDR }  → JWT
+4. JWT in Authorization header               → All subsequent calls
 ```
 
-### Step 1: Get challenge (server-side, anchor implements this)
-The challenge is a Stellar transaction with:
-- Source: anchor's SIGNING_KEY
-- Time bounds: current time ± 15 minutes
-- Operations: `manageData` with key `<domain> auth` and random 64-byte nonce value
-- Signed by: anchor's signing key only
-
-### Step 2 & 3: Client signs challenge (client-side)
 ```javascript
 import { TransactionBuilder, Keypair } from "@stellar/stellar-sdk";
 
-// Fetch challenge
 const res = await fetch(`https://api.anchor.com/auth?account=${publicKey}`);
 const { transaction, network_passphrase } = await res.json();
 
-// Parse and sign — challenge is transaction envelope XDR (string). Use the constructor / helper that matches your **installed** @stellar/stellar-sdk (see release notes + SEP-10 examples in the official docs).
 const tx = TransactionBuilder.fromXDR(transaction, network_passphrase);
 tx.sign(Keypair.fromSecret(secret));
 
-// Submit signed challenge
 const authRes = await fetch("https://api.anchor.com/auth", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ transaction: tx.toXDR() }),
 });
 const { token } = await authRes.json();
-// token is a JWT, store and use in subsequent requests
+// token is a JWT — use as: Authorization: Bearer <token>
 ```
 
-### Step 4: Use JWT
-```javascript
-const response = await fetch("https://api.anchor.com/transactions", {
-  headers: { Authorization: `Bearer ${token}` },
-});
-```
+Multisig: collect all signatures before submitting the challenge.
 
-### Multisig SEP-10
-If the account requires multiple signers, collect all signatures before submitting the challenge.
+### SEP-6 — Programmatic deposit/withdraw
 
----
+Server-to-server, no UI. All interaction via API.
 
-## SEP-6 — Programmatic Transfer API
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/info` | GET | Supported assets, fees, fields |
+| `/deposit` | GET | Start deposit (returns instructions) |
+| `/withdraw` | GET | Start withdrawal (returns Stellar address + memo) |
+| `/transaction` | GET | Poll status: `pending_external` → `completed` / `error` |
 
-SEP-6 allows programmatic (non-interactive) deposit and withdrawal. The entire flow happens via API calls, with no UI or popups. Best for server-to-server integrations.
-
-### Discover endpoints
-```javascript
-const tomlRes = await fetch("https://yourdomain.com/.well-known/stellar.toml");
-// Parse TOML to get TRANSFER_SERVER
-const transferServer = "https://api.anchor.com"; // from toml
-```
-
-### GET /info — What the anchor supports
-```javascript
-const info = await fetch(`${transferServer}/info`, {
-  headers: { Authorization: `Bearer ${jwt}` },
-}).then(r => r.json());
-
-// info.deposit["USDC"] — deposit info for USDC
-// info.withdraw["USDC"] — withdrawal info for USDC
-```
-
-### GET /deposit
-```javascript
-const deposit = await fetch(
-  `${transferServer}/deposit?` + new URLSearchParams({
-    asset_code: "USDC",
-    account: userPublicKey,
-    amount: "100",
-    type: "bank_account",
-  }),
-  { headers: { Authorization: `Bearer ${jwt}` } }
-).then(r => r.json());
-
-// deposit.how — instructions for the user to send fiat
-// deposit.extra_info — additional details
-// deposit.min_amount, deposit.max_amount
-```
-
-### GET /withdraw
 ```javascript
 const withdrawal = await fetch(
-  `${transferServer}/withdraw?` + new URLSearchParams({
-    asset_code: "USDC",
-    type: "bank_account",
-    dest: "agencia/conta",
-    dest_extra: "0001/12345-6",
-    amount: "500",
+  `${server}/withdraw?` + new URLSearchParams({
+    asset_code: "USDC", type: "bank_account",
+    dest: "agencia/conta", dest_extra: "0001/12345-6", amount: "500",
   }),
   { headers: { Authorization: `Bearer ${jwt}` } }
 ).then(r => r.json());
-
-// withdrawal.account_id — Stellar address to send tokens to
-// withdrawal.memo, withdrawal.memo_type — include in your payment transaction
+// withdrawal.account_id, withdrawal.memo — include in payment
 ```
 
-### GET /transaction(s) — Poll status
+### SEP-24 — Hosted interactive transfer
+
+User interacts with anchor's UI (popup/iframe). Needed for KYC, 2FA, bank forms.
+
+| Step | Action |
+|------|--------|
+| 1 | `POST /transactions/deposit/interactive` → get URL |
+| 2 | Open URL in popup/iframe → user completes flow |
+| 3 | `GET /transaction?id=...` → poll until `completed` |
+
 ```javascript
-// Poll until status is "completed" or "error"
-const tx = await fetch(
-  `${transferServer}/transaction?id=${transactionId}`,
-  { headers: { Authorization: `Bearer ${jwt}` } }
-).then(r => r.json());
-
-console.log(tx.transaction.status);
-// pending_external | pending_anchor | pending_stellar | completed | error
-```
-
----
-
-## SEP-24 — Hosted Interactive Transfer
-
-SEP-24 is similar to SEP-6 but uses an interactive web UI (popup or iframe) for user interaction. Required for flows that need KYC, 2FA, or bank form input from the user.
-
-### Flow
-```
-1. POST /transactions/deposit/interactive   → Returns URL
-2. Open URL in popup/iframe                → User completes form in anchor's UI
-3. Poll GET /transaction?id=...            → Wait for completion
-4. User sends stellar payment (for withdrawal) OR anchor sends (for deposit)
-```
-
-### Initiate interactive deposit
-```javascript
-const res = await fetch(`${sep24Server}/transactions/deposit/interactive`, {
+const res = await fetch(`${server}/transactions/deposit/interactive`, {
   method: "POST",
-  headers: {
-    Authorization: `Bearer ${jwt}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    asset_code: "USDC",
-    account: userPublicKey,
-    amount: "100",
-  }),
+  headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+  body: JSON.stringify({ asset_code: "USDC", account: pubKey, amount: "100" }),
 }).then(r => r.json());
-
-// Open this URL for the user
 window.open(res.url, "_blank", "width=600,height=700");
-
-// Poll for status
-const pollInterval = setInterval(async () => {
-  const status = await fetch(
-    `${sep24Server}/transaction?id=${res.id}`,
-    { headers: { Authorization: `Bearer ${jwt}` } }
-  ).then(r => r.json());
-
-  if (status.transaction.status === "completed") {
-    clearInterval(pollInterval);
-    // Done
-  }
-}, 5000);
 ```
 
----
+### SEP-38 — Quote API
 
-## SEP-12 — KYC API
+Get exchange rates before transacting. Quotes are binding for a limited time.
 
-SEP-12 is used by anchors that require KYC. Clients submit user information (name, DOB, ID documents) via the `/customer` endpoint.
-
-```javascript
-// Submit KYC data
-await fetch(`${anchorKycServer}/customer`, {
-  method: "PUT",
-  headers: {
-    Authorization: `Bearer ${jwt}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    account: userPublicKey,
-    first_name: "João",
-    last_name: "Silva",
-    email_address: "joao@email.com",
-    birth_date: "1990-01-15",
-    id_type: "cpf",
-    id_number: "123.456.789-00",
-  }),
-});
-
-// Check KYC status
-const customer = await fetch(
-  `${anchorKycServer}/customer?account=${userPublicKey}`,
-  { headers: { Authorization: `Bearer ${jwt}` } }
-).then(r => r.json());
-
-console.log(customer.status); // NEEDS_INFO | PROCESSING | ACCEPTED | REJECTED
-```
-
----
-
-## SEP-31 — Cross-Border Payments
-
-SEP-31 enables direct anchor-to-anchor payments — a sender in one country sends money, a recipient in another receives it in their local currency. No Stellar wallet needed on the receiving end.
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /prices` | Available pairs for a sell asset |
+| `GET /price` | Indicative rate (non-binding) |
+| `POST /quote` | Firm quote (binding, returns `quote.id`) |
 
 ```javascript
-// POST /transactions
-const payment = await fetch(`${sep31Server}/transactions`, {
+const quote = await fetch(`${server}/quote`, {
   method: "POST",
-  headers: {
-    Authorization: `Bearer ${jwt}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    amount: "100",
-    asset_code: "USDC",
-    asset_issuer: USDC_ISSUER,
-    receiver_id: "receiver-kyc-id",  // from SEP-12
-    sender_id: "sender-kyc-id",      // from SEP-12
-    fields: {
-      transaction: {
-        receiver_routing_number: "021000021",
-        receiver_account_number: "123456789",
-        type: "SWIFT",
-      },
-    },
-  }),
-}).then(r => r.json());
-
-// payment.id — transaction ID to poll
-// payment.stellar_account_id — where to send tokens
-// payment.stellar_memo — include in payment memo
-```
-
----
-
-## SEP-38 — Anchor RFQ (Quote)
-
-SEP-38 provides a request-for-quote mechanism. Get exchange rates and firm quotes before committing to a transaction.
-
-```javascript
-// GET /prices — available pairs
-const prices = await fetch(`${sep38Server}/prices?sell_asset=stellar:USDC:${USDC_ISSUER}`)
-  .then(r => r.json());
-
-// GET /price — indicative rate
-const price = await fetch(
-  `${sep38Server}/price?` + new URLSearchParams({
-    sell_asset: `stellar:USDC:${USDC_ISSUER}`,
-    buy_asset: "iso4217:BRL",
-    sell_amount: "100",
-  })
-).then(r => r.json());
-
-// POST /quote — firm quote (binding for limited time)
-const quote = await fetch(`${sep38Server}/quote`, {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${jwt}`,
-    "Content-Type": "application/json",
-  },
+  headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
   body: JSON.stringify({
     sell_asset: `stellar:USDC:${USDC_ISSUER}`,
-    buy_asset: "iso4217:BRL",
-    sell_amount: "100",
+    buy_asset: "iso4217:BRL", sell_amount: "100",
   }),
 }).then(r => r.json());
-
-// quote.id — use in SEP-6/24/31 request
-// quote.expires_at — quote expiry time
-// quote.price — rate
-// quote.buy_amount — BRL amount
+// quote.id → pass to SEP-6/24/31 · quote.expires_at → quote expiry
 ```
 
 ---
 
-## Implementation Checklist
+## Edge cases
 
-When building an anchor or integrating with one:
-
-- [ ] `stellar.toml` served at `/.well-known/stellar.toml` with CORS `*`
-- [ ] `SIGNING_KEY` set in toml and corresponding keypair secured
-- [ ] SEP-10 auth endpoint returns valid challenge transactions
-- [ ] Challenge transactions have valid time bounds (±15 min)
-- [ ] JWT tokens expire (recommend 24h max)
-- [ ] All SEP endpoints protected by JWT
-- [ ] `/info` endpoint accurate for supported assets and limits
-- [ ] Transaction status polling supported with all status values
-- [ ] Memo handling: always include memo when anchor specifies one
-- [ ] CORS headers on all API endpoints
-- [ ] Test with [Stellar Lab](https://lab.stellar.org) and/or a SEP-compatible wallet (verify current wallet URLs in the official Stellar docs / SEP references)
+| Situation | What happens |
+|-----------|-------------|
+| No `stellar.toml` served | Wallets/clients cannot discover your endpoints — SEP-1 is mandatory |
+| SEP-10 challenge expired | `tx_too_late` — challenges have ±15 min time bounds, re-fetch |
+| Missing memo on withdrawal payment | Anchor cannot identify payment → funds may be lost |
+| SEP-24 popup blocked | Browser blocks `window.open` without user gesture — require click handler |
+| SEP-31 sender/receiver not SEP-12 verified | Transaction rejected — both parties need KYC on file |
+| Quote expired before use | SEP-38 quote must be refreshed — use within `expires_at` |
 
 ---
 
-## Additional SEPs & CAPs (2024-2026)
+## Common errors
 
-The following newer standards extend the core SEPs above:
-
-### SEP-41 — Token Interface
-Defines a standard interface for Soroban contract tokens (transfer, balance, allowance, decimals, name, symbol). The SAC (Stellar Asset Contract) implements this interface. See `/assets/SKILL.md`.
-
-### SEP-45 — Web Auth for Contract Accounts
-Extends SEP-10 authentication to support contract-based accounts (C... addresses), enabling Smart Account wallets to authenticate with anchors.
-
-### SEP-46 — Contract Metadata
-Standard for embedding metadata (name, symbol, decimals, description, interfaces) directly in WASM contract files.
-
-### SEP-48 — Contract Interface Specification
-Allows contracts to declare which interfaces they implement, enabling runtime interface discovery.
-
-### SEP-49 — Upgradeable Contracts
-Standard for contract upgrade patterns using deployer authorization.
-
-### SEP-50 — NFTs (Non-Fungible Tokens)
-Standard interface for NFTs on Soroban, building on SEP-41.
-
-### SEP-55 — Contract Build Verification
-Verification that a deployed WASM matches a known build source.
-
-### SEP-56 — Vault-Style Tokenized Products
-Standard for yield-bearing vault tokens (e.g., LP shares).
-
-### SEP-57 — T-REX Regulated Tokens
-Framework for regulated/permissioned token transfers.
-
-### Core Protocol Proposals (CAPs)
-CAPs govern protocol-level changes. Key recent CAPs:
-- **CAP-46**: Native contract spec types
-- **CAP-51**: Smart Accounts (Protocol 26)
-- **CAP-53**: Transaction V3 extensions
-- **CAP-58**: Configurable transaction limits
-- **CAP-59**: ZK proofs (verifiable state proofs)
-- **CAP-67**: Contract expiration improvements
-- **CAP-74/75**: Additional ZK/cryptography primitives
-
-For the full list, see: [stellar-protocol CAPs](https://github.com/stellar/stellar-protocol/tree/master/core/cap)
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `tx_too_late` | Challenge expired | Re-fetch challenge from `/auth` |
+| `tx_bad_seq` | Reused sequence in challenge | Each challenge must be a new transaction |
+| CORS blocked | Missing `Access-Control-Allow-Origin: *` | Add CORS headers to all endpoints + `stellar.toml` |
+| JWT expired | Token past expiry | Re-authenticate via SEP-10 |
+| `not_found` on `/info` | Wrong `TRANSFER_SERVER` URL | Parse `stellar.toml` to get correct endpoint |
+| `invalid_asset` | Asset not supported by anchor | Check `/info` for supported asset codes |
 
 ---
 
-## Official documentation
+## See also
 
-- SEPs overview: https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals  
-- SEP repository: https://github.com/stellar/stellar-protocol/tree/master/ecosystem  
-- Stellar RPC (for on-chain verification in apps): https://developers.stellar.org/docs/data/apis/rpc  
-- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
+- `/assets/SKILL.md` — SEP-41 / SAC token interface details
+- `/accounts/SKILL.md` — Keypairs, signers, multisig (needed for SEP-10 multisig flows)
+- [SEP specifications](https://github.com/stellar/stellar-protocol/tree/master/ecosystem) — authoritative source for all SEPs
 
 ---
 
