@@ -1,35 +1,49 @@
 ---
 name: stellarskills-testing
-description: How to test Soroban smart contracts using Rust's built-in testing framework and the Stellar CLI.
+description: Testing Soroban smart contracts with Rust unit tests, SAC integration, Stellar CLI sandbox, and Testnet E2E.
 ---
 
 # STELLARSKILLS — Testing
 
-> How to test Soroban smart contracts using Rust's built-in testing framework and the Stellar CLI.
+> Testing Soroban smart contracts with Rust unit tests, SAC integration, Stellar CLI sandbox, and Testnet E2E.
 
 ---
 
-## 1. Rust Unit & Integration Tests
+## When to use
 
-Soroban provides a robust `testutils` feature that lets you run smart contract tests natively in Rust. This creates an in-memory test environment (`Env`) that simulates the Soroban VM exactly.
+- Writing unit tests for Soroban contracts in Rust
+- Testing token interactions with the Stellar Asset Contract (SAC)
+- Running contracts locally via Stellar CLI sandbox
+- E2E testing against Testnet before Mainnet deployment
 
-**Advantages:**
-- Blazing fast (no network overhead).
-- Complete access to internal contract state for assertions.
-- Can test cross-contract calls by registering multiple contracts.
+---
 
-### Setup
+## Quick reference
 
-In your `Cargo.toml`, ensure `testutils` is enabled for dev:
+| Test type | Tool / Command |
+|-----------|---------------|
+| Rust unit test | `cargo test` (with `soroban-sdk` `testutils` feature) |
+| Mock all auths | `env.mock_all_auths()` |
+| Assert specific auth | `env.auths()` — returns vec of auth tuples |
+| Expected panic | `#[should_panic(expected = "...")]` |
+| SAC token in test | `env.register_stellar_asset_contract(admin)` |
+| CLI sandbox deploy | `stellar contract deploy --wasm ... --source alice` |
+| CLI sandbox invoke | `stellar contract invoke --id my_contract --source bob -- ...` |
+| Testnet fund | `stellar keys fund alice --network testnet` |
+| Testnet deploy | `stellar contract deploy --wasm ... --source alice --network testnet` |
+
+---
+
+## Rust unit tests
+
+Soroban's `testutils` feature provides an in-memory `Env` that simulates the Soroban VM. Enable it in `Cargo.toml`:
+
 ```toml
 [dev-dependencies]
-# Must match the `soroban-sdk` version your contracts use (see /soroban/SKILL.md and https://docs.rs/soroban-sdk/latest/soroban_sdk/)
-soroban-sdk = { version = "25.3.0", features = ["testutils"] }
+soroban-sdk = { version = "25.3.1", features = ["testutils"] }
 ```
 
-### Basic Test Structure
-
-Create a `test.rs` file next to your contract implementation, or inline it at the bottom of your file.
+### Basic structure
 
 ```rust
 #![cfg(test)]
@@ -37,50 +51,33 @@ use super::*;
 use soroban_sdk::{testutils::Address as _, Address, Env};
 
 #[test]
-fn test_deposit_and_withdraw() {
-    // 1. Initialize environment
+fn test_deposit() {
     let env = Env::default();
-
-    // 2. Mock contract deployment
-    let contract_id = env.register_contract(None, MyContract);
-
-    // 3. Create a client to interact with the contract
+    let contract_id = env.register(MyContract, ());
     let client = MyContractClient::new(&env, &contract_id);
-
-    // 4. Generate mock addresses
     let admin = Address::generate(&env);
     let user = Address::generate(&env);
+```
 
-    // 5. Invoke contract functions
+```rust
     client.initialize(&admin);
-
-    // 6. Mock authorization (auto-approve all auth requests)
     env.mock_all_auths();
-
     client.deposit(&user, &100);
-
-    // 7. Assert state
     assert_eq!(client.get_balance(&user), 100);
 }
 ```
 
-### Testing Authentication (Mocking Auths)
+### Authentication testing
 
-When testing functions that use `require_auth()`, the test environment will panic unless you tell it how to handle auth.
-
-**Method 1: Allow all auths (Easiest)**
+Allow all auths (simplest):
 ```rust
 env.mock_all_auths();
 client.secure_action(&user);
 ```
 
-**Method 2: Assert specific auths (Strict)**
-Validates that the contract actually requested the correct signatures.
+Assert specific auths (strict):
 ```rust
 client.secure_action(&user);
-
-// Verify the contract requested auth from `user` for `secure_action`.
-// Tuple shape and how you obtain the contract `Address` vary by soroban-sdk version — check docs.rs for your pinned `soroban-sdk`.
 assert_eq!(
     env.auths(),
     std::vec![(
@@ -92,139 +89,135 @@ assert_eq!(
 );
 ```
 
-### Testing Panics (Expected Failures)
+Auth tuple shape varies by SDK release — check `docs.rs` for your pinned `soroban-sdk`.
 
-Use `#[should_panic(expected = "...")]` to test that your contract correctly reverts on invalid input or unauthorized access.
+### Testing expected panics
 
 ```rust
 #[test]
 #[should_panic(expected = "insufficient funds")]
 fn test_withdraw_too_much() {
     let env = Env::default();
-    let contract_id = env.register_contract(None, MyContract);
+    let contract_id = env.register(MyContract, ());
     let client = MyContractClient::new(&env, &contract_id);
     let user = Address::generate(&env);
 
     env.mock_all_auths();
-    client.withdraw(&user, &9999); // Should panic
+    client.withdraw(&user, &9999);
 }
-```
-
-### Running Tests
-
-```bash
-cargo test
 ```
 
 ---
 
-## 2. Testing with Stellar Asset Contract (SAC)
+## Testing with SAC
 
-To test contracts that interact with XLM or custom tokens, you need to deploy the built-in SAC within your test environment.
+Deploy the Stellar Asset Contract in the test `Env` to test token interactions:
 
 ```rust
 use soroban_sdk::token;
 
-#[test]
-fn test_with_token() {
-    let env = Env::default();
-    env.mock_all_auths();
+let env = Env::default();
+env.mock_all_auths();
+let token_admin = Address::generate(&env);
 
-    // Generate an admin for the token
-    let token_admin = Address::generate(&env);
+let token_id = env.register_stellar_asset_contract(token_admin.clone());
+let token_client = token::AdminClient::new(&env, &token_id);
+let token = token::Client::new(&env, &token_id);
 
-    // Deploy the SAC token natively in the test environment
-    let token_id = env.register_stellar_asset_contract(token_admin.clone());
-    let token_client = token::AdminClient::new(&env, &token_id);
-    let token = token::Client::new(&env, &token_id);
+let user = Address::generate(&env);
+token_client.mint(&user, &1000);
+```
 
-    // Mint tokens to a user
-    let user = Address::generate(&env);
-    token_client.mint(&user, &1000);
+Pass `token_id` into your contract functions:
+```rust
+let my_contract_id = env.register(MyContract, ());
+let client = MyContractClient::new(&env, &my_contract_id);
+client.deposit(&user, &token_id, &100);
 
-    // Deploy your contract
-    let my_contract_id = env.register_contract(None, MyContract);
-    let client = MyContractClient::new(&env, &my_contract_id);
-
-    // Now you can pass `token_id` into your contract functions
-    client.deposit(&user, &token_id, &100);
-
-    assert_eq!(token.balance(&user), 900);
-    assert_eq!(token.balance(&my_contract_id), 100);
-}
+assert_eq!(token.balance(&user), 900);
+assert_eq!(token.balance(&my_contract_id), 100);
 ```
 
 ---
 
-## 3. Testing via Stellar CLI (Local Sandbox)
+## Stellar CLI sandbox
 
-Before deploying to Testnet, you can run an interactive sandbox using the Stellar CLI.
+Run contracts locally without network access:
 
 ```bash
-# Compile
 stellar contract build
 
-# Generate test identities
 stellar keys generate alice
 stellar keys generate bob
+```
 
-# Deploy contract to local sandbox (no network required)
-stellar contract deploy --wasm target/.../my_contract.wasm \
-  --source alice \
-  --alias my_contract
+Deploy to local sandbox:
+```bash
+stellar contract deploy --wasm target/wasm32-unknown-unknown/release/my_contract.wasm \
+  --source alice --alias my_contract
+```
 
-# Invoke contract
-stellar contract invoke \
-  --id my_contract \
-  --source bob \
-  -- \
-  deposit \
-  --user bob \
-  --amount 100
+Invoke and read:
+```bash
+stellar contract invoke --id my_contract --source bob -- \
+  deposit --user bob --amount 100
 
-# Read contract storage
 stellar contract read --id my_contract
 ```
 
 ---
 
-## 4. Testnet Deployment & E2E Testing
+## Testnet E2E testing
 
-Testnet is a live network maintained by SDF that resets periodically (usually quarterly).
-
-**1. Set up network config:**
+Add network config:
 ```bash
-stellar network add \
-  --global testnet \
+stellar network add --global testnet \
   --rpc-url https://soroban-testnet.stellar.org \
   --network-passphrase "Test SDF Network ; September 2015"
 ```
-(Example uses the SDF public **testnet** RPC host for quick setup; for production-like or high-volume testing, pick a URL from [Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers).)
 
-**2. Fund identity on Testnet:**
+Fund and deploy:
 ```bash
 stellar keys fund alice --network testnet
-```
 
-**3. Deploy:**
-```bash
 stellar contract deploy \
   --wasm target/wasm32-unknown-unknown/release/my_contract.wasm \
-  --source alice \
-  --network testnet
+  --source alice --network testnet
 ```
 
-For E2E tests, you can write JavaScript/TypeScript scripts using `@stellar/stellar-sdk` to simulate frontend interactions against the deployed Testnet contract (see `/rpc/SKILL.md` for JS SDK usage).
+For JS/TS E2E scripts simulating frontend interactions, use `@stellar/stellar-sdk`.
 
 ---
 
-## Official documentation
+## Edge cases
 
-- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
-- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
-- Network resource limits & fees: https://developers.stellar.org/docs/networks/resource-limits-fees  
-- Stellar Lab network limits: https://lab.stellar.org/network-limits  
-- Soroban overview: https://developers.stellar.org/docs/build/smart-contracts/overview  
+| Situation | What happens |
+|-----------|-------------|
+| Auth required but `mock_all_auths()` not called | Test panics with auth error |
+| Wrong auth tuple shape in `env.auths()` assertion | Test fails — shape varies by SDK release |
+| SAC mint before `mock_all_auths()` | Panics — mint requires auth from admin |
+| CLI sandbox with missing `--source` | Error — source identity required for all transactions |
+| Testnet resets (quarterly) | All deployed contracts and state are wiped |
+
+---
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `testutils` feature not found | Missing in `Cargo.toml` dev-dependencies | Add `features = ["testutils"]` to `soroban-sdk` |
+| Auth panic in test | Contract calls `require_auth()` without mock | Call `env.mock_all_auths()` before invoking |
+| `should_panic` doesn't catch | Expected message string doesn't match | Match exact panic message from contract |
+| CLI `contract deploy` not found | Stellar CLI not installed or not in PATH | Install via `cargo install stellar-cli` |
+| Testnet `timeout` or `504` | RPC overloaded or network congested | Retry or use alternate RPC provider |
+
+---
+
+## See also
+
+- Official docs: [Soroban smart contracts](https://developers.stellar.org/docs/build/smart-contracts)
+- [Stellar RPC providers](https://developers.stellar.org/docs/data/apis/rpc/providers)
+- [Network resource limits & fees](https://developers.stellar.org/docs/networks/resource-limits-fees)
 
 ---
 

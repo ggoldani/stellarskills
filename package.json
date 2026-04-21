@@ -29,7 +29,10 @@
     "testing/SKILL.md",
     "tools/SKILL.md",
     "why/SKILL.md",
-    "x402/SKILL.md"
+    "x402/SKILL.md",
+    "mpp/SKILL.md",
+    "passkeys/SKILL.md",
+    "state-archival/SKILL.md"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

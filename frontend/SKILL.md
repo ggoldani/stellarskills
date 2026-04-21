@@ -1,25 +1,44 @@
 ---
 name: stellarskills-frontend
-description: Connecting web apps to Stellar. Stellar Wallets Kit, Freighter API, signing Soroban transactions, and secure SEP-10 Web3 Auth.
+description: Connecting web apps to Stellar via Wallets Kit, Freighter API, signing classic and Soroban transactions, and SEP-10 Web3 Auth.
 ---
 
 # STELLARSKILLS — Frontend Integration
 
-> Connecting web apps to Stellar. Stellar Wallets Kit, Freighter API, signing Soroban transactions, and secure SEP-10 Web3 Auth.
+> Connecting web apps to Stellar via Wallets Kit, Freighter API, signing classic and Soroban transactions, and SEP-10 Web3 Auth.
 
 ---
 
-## 1. Connecting Wallets (The Modern Standard)
+## When to use
 
-To build a professional dApp with high UX, you must support multiple wallets (Freighter, Albedo, xBull, Lobstr, and WalletConnect) simultaneously. **Do not write custom logic for each extension.**
+- Connecting a web app to Stellar wallets (Freighter, Albedo, xBull, Lobstr, WalletConnect)
+- Signing and submitting classic or Soroban transactions from the browser
+- Implementing SEP-10 challenge-response authentication
+- Building wallet-agnostic dApp flows (single integration, multiple wallets)
 
-Instead, use **Stellar Wallets Kit** (`@creit.tech/stellar-wallets-kit`), the standard "RainbowKit equivalent" for Stellar.
+---
+
+## Quick reference
+
+| Action | Method |
+|--------|--------|
+| Init wallet connection | `new StellarWalletsKit({ network, modules: allowAllModules() })` |
+| Open wallet selector | `kit.openModal({ onWalletSelected })` |
+| Get connected address | `kit.getAddress()` |
+| Sign classic tx | `kit.signTx({ xdr, publicKeys, network })` |
+| Sign Soroban tx | simulate → assemble → `kit.signTx()` → `rpcServer.sendTransaction()` |
+| Freighter (low-level) | `isConnected()`, `requestAccess()`, `signTransaction()` from `@stellar/freighter-api` |
+| SEP-10 auth | fetch challenge → sign via wallet → POST signed XDR to backend |
+
+---
+
+## Connecting wallets
+
+Use **Stellar Wallets Kit** for multi-wallet support. Do not build per-extension logic.
 
 ```bash
-npm install @creit.tech/stellar-wallets-kit
+npm install @creit.tech/stellar-wallets-kit  # verify: https://github.com/creit-tech/stellar-wallets-kit/releases
 ```
-
-### Initializing the Kit & Showing the Modal
 
 ```javascript
 import {
@@ -29,160 +48,207 @@ import {
   FREIGHTER_ID
 } from '@creit.tech/stellar-wallets-kit';
 
-// 1. Initialize the kit globally in your React Context or state manager
 const kit = new StellarWalletsKit({
   network: WalletNetwork.TESTNET,
   selectedWalletId: FREIGHTER_ID,
   modules: allowAllModules(),
 });
+```
 
-// 2. Open the beautiful native UI modal to let user choose their wallet
+```javascript
 await kit.openModal({
   onWalletSelected: async (option) => {
     kit.setWallet(option.id);
-    const publicKey = await kit.getPublicKey();
-    console.log(`Connected with ${option.name}: ${publicKey}`);
+    const { address } = await kit.getAddress();
   }
 });
 ```
 
 ---
 
-## 2. Signing Transactions (Wallets Kit)
+## Signing classic transactions
 
-Once connected, you can sign XDR transactions agnostically. The kit handles the extension pop-up whether the user is on Freighter or Albedo.
+### Build
 
 ```javascript
 import { TransactionBuilder, Networks, BASE_FEE, Operation, Asset, Horizon } from "@stellar/stellar-sdk";
 
-// 1. Build the transaction — load sequence via Horizon (legacy) or Stellar RPC (`getAccount` on SorobanRpc.Server)
-// Horizon: https://developers.stellar.org/docs/data/apis/horizon (deprecated for new integrations)
-const horizonServer = new Horizon.Server("https://horizon-testnet.stellar.org");
-const account = await horizonServer.loadAccount(userPublicKey);
+// Prefer RPC for new integrations; Horizon is legacy REST
+const server = new Horizon.Server("https://horizon-testnet.stellar.org");
+const account = await server.loadAccount(userPublicKey);
 
-const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
-  .addOperation(Operation.payment({ destination: "GBB...", asset: Asset.native(), amount: "10" }))
+const tx = new TransactionBuilder(account, {
+  fee: BASE_FEE, networkPassphrase: Networks.TESTNET,
+})
+  .addOperation(Operation.payment({
+    destination: "GBB...", asset: Asset.native(), amount: "10",
+  }))
   .setTimeout(30)
   .build();
+```
 
-// 2. Sign via Wallets Kit
+### Sign
+
+```javascript
 const { signedXDR } = await kit.signTx({
   xdr: tx.toXDR(),
   publicKeys: [userPublicKey],
-  network: WalletNetwork.TESTNET
+  network: WalletNetwork.TESTNET,
 });
+```
 
-// 3. Reconstruct and submit (Horizon example below; prefer aligning new apps with Stellar RPC migration)
+### Submit
+
+```javascript
 const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET);
-await horizonServer.submitTransaction(signedTx);
+await server.submitTransaction(signedTx);
 ```
 
 ---
 
-## 3. Low-Level Integration: Freighter API
+## Signing Soroban transactions
 
-If you absolutely must build a low-level, Freighter-only integration without UI wrappers, use `@stellar/freighter-api`.
+Requires simulate → assemble → sign → submit. RPC is mandatory (Horizon does not support Soroban).
 
-```bash
-npm install @stellar/freighter-api
-```
+### Build
 
 ```javascript
-import { isConnected, requestAccess, signTransaction } from "@stellar/freighter-api";
-
-// Connect
-if (await isConnected()) {
-  const address = await requestAccess();
-}
-
-// Sign
-const signedTxXdr = await signTransaction(tx.toXDR(), { network: "TESTNET" });
-```
-
----
-
-## 4. Signing Transactions (Soroban / Stellar RPC)
-
-When calling a Soroban smart contract, you cannot simply sign the operation. You must **simulate** the transaction first to fetch the correct resource footprint and fee, assemble it, and *then* request the user's signature. Use **Stellar RPC** (`SorobanRpc.Server` in JS). Docs: https://developers.stellar.org/docs/data/apis/rpc
-
-```javascript
-import { TransactionBuilder, Networks, BASE_FEE, Contract, nativeToScVal } from "@stellar/stellar-sdk";
-import { SorobanRpc } from "@stellar/stellar-sdk";
+import { TransactionBuilder, Networks, BASE_FEE, Contract, nativeToScVal, SorobanRpc } from "@stellar/stellar-sdk";
 
 const contract = new Contract(contractId);
-
-// 1. Build initial tx with placeholder fee; encode args with nativeToScVal (types must match your contract)
-let tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
-  .addOperation(
-    contract.call(
-      "deposit",
-      nativeToScVal(amount, { type: "i128" }),
-      nativeToScVal(userAddress, { type: "address" })
-    )
-  )
+let tx = new TransactionBuilder(account, {
+  fee: BASE_FEE, networkPassphrase: Networks.TESTNET,
+})
+  .addOperation(contract.call(
+    "deposit",
+    nativeToScVal(amount, { type: "i128" }),
+    nativeToScVal(userAddress, { type: "address" }),
+  ))
   .setTimeout(30)
   .build();
+```
 
-// 2. Simulate via RPC to calculate the exact footprint and CPU fee
+### Simulate
+
+```javascript
 const sim = await rpcServer.simulateTransaction(tx);
 if (SorobanRpc.Api.isSimulationError(sim)) throw sim.error;
+```
 
-// 3. Assemble transaction with the correct simulated footprint
+### Assemble and sign
+
+```javascript
 tx = SorobanRpc.assembleTransaction(tx, sim);
 
-// 4. Request user signature via Wallets Kit or Freighter API
-const { signedXDR } = await kit.signTx({ xdr: tx.toXDR(), publicKeys: [userPublicKey] });
+const { signedXDR } = await kit.signTx({
+  xdr: tx.toXDR(),
+  publicKeys: [userPublicKey],
+  network: WalletNetwork.TESTNET,
+});
+```
 
-// 5. Submit to RPC and poll
+### Submit
+
+```javascript
 const signedTx = TransactionBuilder.fromXDR(signedXDR, Networks.TESTNET);
 const sendResponse = await rpcServer.sendTransaction(signedTx);
 ```
 
 ---
 
-## Official documentation
+## Freighter API (low-level alternative)
 
-- Stellar docs: https://developers.stellar.org/docs  
-- Stellar RPC: https://developers.stellar.org/docs/data/apis/rpc  
-- Stellar RPC providers: https://developers.stellar.org/docs/data/apis/rpc/providers  
-- Smart contracts overview: https://developers.stellar.org/docs/build/smart-contracts/overview  
-- JS SDK releases: https://github.com/stellar/js-stellar-sdk/releases (verify current tag, e.g. **v14.6.1**)  
+Freighter-only integration without Wallets Kit.
+
+```bash
+npm install @stellar/freighter-api  # verify: https://www.npmjs.com/package/@stellar/freighter-api
+```
+
+```javascript
+import { isConnected, requestAccess, signTransaction } from "@stellar/freighter-api";
+
+const connected = await isConnected();
+const address = await requestAccess();
+const signedXdr = await signTransaction(tx.toXDR(), { network: "TESTNET" });
+```
 
 ---
 
-## 5. SEP-10 Web3 Auth (Security Warning)
+## SEP-10 Web3 Auth
 
-If your app has a backend and needs to securely authenticate the user via Web3, implement the **SEP-10** standard.
+Challenge-response authentication. Backend issues a challenge, frontend signs it via wallet, backend verifies and sets session.
 
-### ⚠️ SECURITY RULE: Never store JWTs in LocalStorage
-Do not store the returned `auth_token` in `localStorage` or `sessionStorage`. This makes your frontend highly vulnerable to XSS (Cross-Site Scripting) attacks. The backend must set the JWT inside an `HttpOnly`, `Secure`, and `SameSite=Strict` (or `Lax`) cookie. Ensure all `fetch` calls to your protected API include `credentials: "include"`.
+**Security: never store JWTs in localStorage/sessionStorage.** Backend must set `HttpOnly`, `Secure`, `SameSite=Strict` cookie. Frontend uses `credentials: "include"`.
 
-### Frontend Implementation
+### Fetch and sign challenge
+
 ```javascript
-// 1. Fetch SEP-10 challenge from your backend
-const challengeResponse = await fetch("/api/auth/challenge?account=" + userPublicKey);
-const { transaction, network_passphrase } = await challengeResponse.json();
+const challengeResp = await fetch(
+  "/api/auth/challenge?account=" + userPublicKey
+);
+const { transaction } = await challengeResp.json();
 
-// 2. Request user to sign the challenge transaction via wallet
 const { signedXDR } = await kit.signTx({
   xdr: transaction,
   publicKeys: [userPublicKey],
-  network: WalletNetwork.TESTNET
+  network: WalletNetwork.TESTNET,
 });
+```
 
-// 3. Send signed challenge back to backend
-// The backend verifies the signature. It MUST NOT return the token in the JSON body.
-// Instead, the backend sets the HttpOnly cookie in the response headers.
+### Send to backend and use session
+
+```javascript
+// Backend verifies signature, sets HttpOnly cookie (no JSON body token)
 await fetch("/api/auth/token", {
   method: "POST",
   body: JSON.stringify({ transaction: signedXDR }),
-  headers: { "Content-Type": "application/json" }
+  headers: { "Content-Type": "application/json" },
 });
 
-// 4. Subsequent authenticated requests
-// The browser will automatically attach the HttpOnly cookie
-const userProfile = await fetch("/api/me", { credentials: "include" });
+// Cookie sent automatically on subsequent requests
+const profile = await fetch("/api/me", { credentials: "include" });
 ```
+
+---
+
+## Edge cases
+
+| Situation | What happens |
+|-----------|-------------|
+| No wallet extension installed | Modal shows install prompt for available wallets |
+| User rejects signing | `signTx` throws — catch and show retry UI |
+| Soroban simulation fails | `isSimulationError(sim)` is `true` — inspect `sim.error` |
+| Horizon returns `tx_bad_seq` | Sequence number stale — reload account before rebuilding |
+| Wallet disconnected mid-session | `getAddress()` throws — re-trigger `openModal` |
+| SEP-10 cookie not sent | Missing `credentials: "include"` on fetch or `SameSite` mismatch |
+
+---
+
+## Common errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `signTx` throws | Wallet extension not connected or user rejected | Re-connect via `openModal`, handle rejection in UI |
+| `isSimulationError` | Contract call reverted or insufficient resources | Check `sim.error` for revert reason, add fee/budget |
+| `tx_bad_seq` | Stale sequence number | Reload account before each transaction build |
+| CORS on `/api/auth/*` | Backend missing CORS headers | Set `Access-Control-Allow-Origin` and `credentials: true` |
+| Cookie not attached | `SameSite` mismatch or missing `credentials: "include"` | Ensure `SameSite=Lax` or `Strict`, add credentials to fetch |
+
+---
+
+## SDK install
+
+```bash
+npm install @stellar/stellar-sdk  # verify: https://github.com/stellar/js-stellar-sdk/releases
+```
+
+---
+
+## See also
+
+- `/accounts/SKILL.md` — keypairs, account creation, multisig, minimum balance
+- [Stellar RPC docs](https://developers.stellar.org/docs/data/apis/rpc)
+- [Smart contracts overview](https://developers.stellar.org/docs/build/smart-contracts/overview)
 
 ---
 
