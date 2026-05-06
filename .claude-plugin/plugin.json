@@ -112,6 +112,16 @@
       "path": "../x402/SKILL.md"
     },
     {
+      "name": "stellarskills-ingest-sdk",
+      "description": "Building network data ingestion pipelines on Stellar. Reading the ledger, mapping to custom models, and outputting to datastores or message brokers using go-stellar-sdk.",
+      "path": "../ingest-sdk/SKILL.md"
+    },
+    {
+      "name": "stellarskills-zk-proofs",
+      "description": "Zero-Knowledge proofs on Stellar, including BN254 host functions, Poseidon hashing, and Privacy Pools.",
+      "path": "../zk-proofs/SKILL.md"
+    },
+    {
       "name": "stellarskills-mpp",
       "description": "Machine Payments Protocol on Stellar. HTTP 402 charge and session intents for AI agents using Soroban token transfers without external facilitator.",
       "path": "../mpp/SKILL.md"

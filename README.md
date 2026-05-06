@@ -103,6 +103,8 @@ clawhub install stellarskills
 | Skill Domain | URL | Description |
 |--------------|-----|-------------|
 | **Root Index** | [`/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/SKILL.md) | The missing knowledge between AI agents and production Stellar Network applications. |
+| **Ingest SDK** | [`/ingest-sdk/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/ingest-sdk/SKILL.md) | Building network data ingestion pipelines on Stellar using go-stellar-sdk. |
+| **ZK Proofs** | [`/zk-proofs/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/zk-proofs/SKILL.md) | Zero-Knowledge proofs on Stellar, including BN254 host functions, Poseidon hashing, and Privacy Pools. |
 | **Accounts** | [`/accounts/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/accounts/SKILL.md) | Keypairs, account creation, signers, multisig, minimum balance, sponsorship, muxed accounts. |
 | **Anchors** | [`/anchors/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/anchors/SKILL.md) | Fiat on/off-ramps on Stellar. Integration flows, stellar.toml, and the anchor ecosystem. |
 | **Assets** | [`/assets/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/assets/SKILL.md) | Custom asset issuance, trustlines, asset types, Stellar Asset Contract (SAC), USDC and stablecoins. |
