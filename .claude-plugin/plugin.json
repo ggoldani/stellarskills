@@ -125,6 +125,16 @@
       "name": "stellarskills-state-archival",
       "description": "Soroban state archival and TTL management. Storage expiration, restoration paths, and operational patterns for contract state on Stellar.",
       "path": "../state-archival/SKILL.md"
+    },
+    {
+      "name": "stellarskills-privacy",
+      "description": "How to implement privacy-preserving applications on Stellar using ZK proofs, Confidential Tokens, and Privacy Pools.",
+      "path": "../privacy/SKILL.md"
+    },
+    {
+      "name": "stellarskills-oracles",
+      "description": "How to integrate and use Data Oracles on Stellar and Soroban.",
+      "path": "../oracles/SKILL.md"
     }
   ]
 }

@@ -188,6 +188,8 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 | SDKs, wallets, CLI, Quickstart, Lab | `raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md` |
 | Frontend — Wallets Kit, signing, SEP-10 | `raw.githubusercontent.com/ggoldani/stellarskills/main/frontend/SKILL.md` |
 | Data indexers — Mercury, Hubble, SubQuery | `raw.githubusercontent.com/ggoldani/stellarskills/main/data-indexers/SKILL.md` |
+| Oracles — Reflector, Band, DIA | `raw.githubusercontent.com/ggoldani/stellarskills/main/oracles/SKILL.md` |
+| Privacy — ZK Proofs, Confidential Tokens, Pools | `raw.githubusercontent.com/ggoldani/stellarskills/main/privacy/SKILL.md` |
 | Scaffold Stellar — full-stack dApp scaffolding | `raw.githubusercontent.com/ggoldani/stellarskills/main/scaffold-stellar/SKILL.md` |
 | x402 micropayments | `raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md` |
 | MPP — charge/session intents | `raw.githubusercontent.com/ggoldani/stellarskills/main/mpp/SKILL.md` |

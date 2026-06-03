@@ -32,7 +32,9 @@
     "x402/SKILL.md",
     "mpp/SKILL.md",
     "passkeys/SKILL.md",
-    "state-archival/SKILL.md"
+    "state-archival/SKILL.md",
+    "privacy/SKILL.md",
+    "oracles/SKILL.md"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
