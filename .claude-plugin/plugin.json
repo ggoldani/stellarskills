@@ -125,6 +125,16 @@
       "name": "stellarskills-state-archival",
       "description": "Soroban state archival and TTL management. Storage expiration, restoration paths, and operational patterns for contract state on Stellar.",
       "path": "../state-archival/SKILL.md"
+    },
+    {
+      "name": "stellarskills-privacy",
+      "description": "Privacy solutions on Stellar. Privacy Pools, Stellar Private Payments, Confidential Tokens, and Onchain ZK Verifiers.",
+      "path": "../privacy/SKILL.md"
+    },
+    {
+      "name": "stellarskills-zk",
+      "description": "Zero-Knowledge proofs on Stellar. BN254 and Poseidon host functions, onchain verifiers, and Protocol 25 primitives.",
+      "path": "../zk/SKILL.md"
     }
   ]
 }

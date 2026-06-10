@@ -212,7 +212,7 @@ Query via GraphQL:
 
 - `/events/SKILL.md` — reading and emitting Soroban events
 - `/rpc/SKILL.md` — Stellar RPC setup and providers
-- Hubble docs: [BigQuery access](https://developers.stellar.org/docs/data/rpc-data-lake)
+- Hubble docs: [BigQuery access](https://developers.stellar.org/docs/data/analytics/hubble)
 
 ---
 

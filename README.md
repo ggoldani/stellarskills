@@ -118,12 +118,14 @@ clawhub install stellarskills
 | **Soroban** | [`/soroban/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/soroban/SKILL.md) | Stellar's smart contract platform. Rust/WASM contracts, constructors, storage types, auth, invocation, resource limits. |
 | **MPP** | [`/mpp/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/mpp/SKILL.md) | Machine Payments Protocol on Stellar. HTTP 402 charge and session intents for AI agents using Soroban token transfers. |
 | **Passkeys** | [`/passkeys/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/passkeys/SKILL.md) | Passkeys (WebAuthn) and smart wallets on Stellar using secp256r1 keys, passkey-kit, and Launchtube relay. |
+| **Privacy** | [`/privacy/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/privacy/SKILL.md) | Privacy solutions on Stellar. Privacy Pools, Stellar Private Payments, Confidential Tokens, and Onchain ZK Verifiers. |
 | **Storage** | [`/storage/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/storage/SKILL.md) | How to manage state in Soroban. Understanding Persistent, Temporary, and Instance storage, TTL/Rent, and migrating from Solidity mappings. |
 | **State Archival** | [`/state-archival/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/state-archival/SKILL.md) | Soroban state archival and TTL management. Storage expiration, restoration, and operational patterns for contract state. |
 | **Testing** | [`/testing/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/testing/SKILL.md) | How to test Soroban smart contracts using Rust's built-in testing framework and the Stellar CLI. |
 | **Tools** | [`/tools/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md) | The essential tools, SDKs, wallets, and explorers for building on Stellar. |
 | **Why Stellar?** | [`/why/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/why/SKILL.md) | A sober, honest assessment of what Stellar is for, its tradeoffs, and why you would choose it over EVM or Solana. |
 | **x402** | [`/x402/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md) | HTTP 402 micropayments on Stellar via `@x402/stellar`, auth entries, facilitator (Built on Stellar). Not the same as EVM/Base x402. |
+| **ZK Proofs** | [`/zk/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/zk/SKILL.md) | Zero-Knowledge proofs on Stellar. BN254 and Poseidon host functions, onchain verifiers, and Protocol 25 primitives. |
 
 ---
 
