@@ -125,7 +125,6 @@ clawhub install stellarskills
 | **Tools** | [`/tools/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/tools/SKILL.md) | The essential tools, SDKs, wallets, and explorers for building on Stellar. |
 | **Why Stellar?** | [`/why/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/why/SKILL.md) | A sober, honest assessment of what Stellar is for, its tradeoffs, and why you would choose it over EVM or Solana. |
 | **x402** | [`/x402/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md) | HTTP 402 micropayments on Stellar via `@x402/stellar`, auth entries, facilitator (Built on Stellar). Not the same as EVM/Base x402. |
-| **ZK Proofs** | [`/zk/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/zk/SKILL.md) | Zero-Knowledge proofs on Stellar. BN254 and Poseidon host functions, onchain verifiers, and Protocol 25 primitives. |
 
 ---
 

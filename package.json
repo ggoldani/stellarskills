@@ -33,8 +33,7 @@
     "mpp/SKILL.md",
     "passkeys/SKILL.md",
     "state-archival/SKILL.md",
-    "privacy/SKILL.md",
-    "zk/SKILL.md"
+    "privacy/SKILL.md"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
