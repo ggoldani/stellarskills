@@ -1,6 +1,6 @@
 {
   "name": "stellarskills",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Stellar Network knowledge engineered specifically for AI agents",
   "type": "module",
   "bin": {
@@ -34,7 +34,9 @@
     "ingest-sdk/SKILL.md",
     "zk-proofs/SKILL.md",
     "passkeys/SKILL.md",
-    "state-archival/SKILL.md"
+    "state-archival/SKILL.md",
+    "oracles/SKILL.md",
+    "stellar-disbursement-platform/SKILL.md"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

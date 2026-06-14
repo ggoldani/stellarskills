@@ -67,6 +67,11 @@
       "path": "../operations/SKILL.md"
     },
     {
+      "name": "stellarskills-oracles",
+      "description": "Oracles on Stellar (Soroban). Reflector, Band Protocol, DIA Oracles. Price feeds for smart contracts.",
+      "path": "../oracles/SKILL.md"
+    },
+    {
       "name": "stellarskills-rpc",
       "description": "Soroban's JSON-RPC API for smart contracts. Simulation, invocation, fetching ledger state, and getting events.",
       "path": "../rpc/SKILL.md"
@@ -80,6 +85,11 @@
       "name": "stellarskills-seps",
       "description": "SEP-1 (stellar.toml), SEP-6, SEP-10 (auth), SEP-12 (KYC), SEP-24, SEP-31, SEP-38 — the interoperability standards that power Stellar's payment rails.",
       "path": "../seps/SKILL.md"
+    },
+    {
+      "name": "stellarskills-stellar-disbursement-platform",
+      "description": "Stellar Disbursement Platform (SDP) overview, bulk payments, architecture and APIs.",
+      "path": "../stellar-disbursement-platform/SKILL.md"
     },
     {
       "name": "stellarskills-soroban",
