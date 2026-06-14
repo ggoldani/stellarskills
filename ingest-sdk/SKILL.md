@@ -1,72 +1,80 @@
 ---
-name: stellarskills-ingest-sdk
-description: Building network data ingestion pipelines on Stellar. Reading the ledger, mapping to custom models, and outputting to datastores or message brokers using go-stellar-sdk.
+name: ingest-sdk
+description: Build custom network ingestion pipelines on Stellar. Covers the Go Ingest SDK, history archives, ledger metadata, ApplyLedgerMetadata, Galexie exports, and real-time or historical data flows.
+user-invocable: true
+argument-hint: "[ingest task]"
 ---
 
-# STELLARSKILLS — Ingestion Pipelines
+# Stellar Ingestion Pipelines
 
-> Building network data ingestion pipelines on Stellar. Reading the ledger, mapping to custom models, and outputting to datastores or message brokers using go-stellar-sdk.
+> Build custom network ingestion pipelines on Stellar. Use the Go Ingest SDK to read ledger metadata, derive application models, and stream data to downstream systems.
+
+## When to use this skill
+- Building a pipeline that consumes live Stellar ledger metadata
+- Exporting historical or continuous ledger data with Galexie
+- Translating XDR metadata into a domain model
+- Sending derived events to a datastore or message bus
+- Choosing between a custom indexer, Galexie, and RPC/Hubble workflows
+
+## Related skills
+- Historical query and RPC/Horizon workflows → `../data-indexers/SKILL.md`
+- Reading live network state or events → `../rpc/SKILL.md`
+- Writing consumers that react to contract events → `../soroban/SKILL.md`
 
 ---
 
-## When to use
+## What the Ingest SDK is
 
-- Building an application that requires filtering live Stellar network transaction data
-- Exporting network metadata as files to a CDP Datastore
-- Streaming new ledgers as they close to a ZeroMQ Publisher Socket
-- Creating an ingestion pipeline using the `github.com/stellar/go-stellar-sdk/ingest` package
+The Ingest SDK is a set of Go packages under `github.com/stellar/go-stellar-sdk` for acquiring and parsing Stellar network data.
 
----
+It converts XDR-encoded streams from Stellar Core into typed data structures that are easier to process in application code.
 
 ## Quick reference
 
 | Package | Purpose |
 |---------|---------|
-| `amount` | Converts prices from network transaction operations to string |
-| `historyarchive` / `datastore` / `storage` | Wrappers for accessing history archives without low-level HTTP |
-| `ingest` | Parsing network ledger metadata, converts to `LedgerTransaction` model |
-| `network` | Convenient pre-configured settings for Testnet and Mainnet |
-| `xdr` | Complete Golang binding to the Stellar network data model |
+| `amount` | Converts operation prices and amounts into strings |
+| `historyarchive` / `datastore` / `storage` | Accesses history archives and datastores |
+| `ingest` | Parses ledger metadata and applies it to consumer callbacks |
+| `network` | Pre-configured network constants for Testnet/Mainnet |
+| `xdr` | Go bindings for the Stellar network data model |
 
----
+## Typical pipeline
 
-## Architecture
+An end-to-end ingestion flow usually has two parts:
 
-An end-to-end ingestion pipeline requires two separate applications:
+1. **Export pipeline** — exports Stellar ledger metadata to cloud storage.
+2. **Consumer pipeline** — reads exported files and turns them into an app-specific model.
 
-1. **Ledger Metadata Export Pipeline**: Exports Stellar Ledger Metadata as files to a CDP Datastore (such as Google Cloud Storage).
-2. **Ledger Metadata Consumer Pipeline**: Retrieves files from the datastore and processes them.
+### Consumer pipeline roles
 
-### Ledger Metadata Consumer Pipeline
+- **Inbound adapter** — reads `LedgerCloseMeta` files from storage and feeds them into `ApplyLedgerMetadata`.
+- **Transformer** — parses ledger metadata with `xdr`, filters the operations you care about, and maps them to your model.
+- **Outbound adapter** — publishes the derived model to a datastore, queue, or message bus.
 
-The consumer pipeline has three roles:
+## Galexie
 
-- **Inbound Adapter**: Retrieves `LedgerCloseMeta` files from the Datastore and extracts the `LedgerCloseMeta` for each Ledger. The Go SDK provides `ApplyLedgerMetadata` for automated, performant retrieval.
-- **Transformer**: Parses the ledger meta data using the `xdr` package, filters for specific operations (e.g. Payments), and converts them into an application-specific data model.
-- **Outbound Adapter**: Subscribes to the application data model and publishes the data to an external datastore or message broker (like ZeroMQ).
+Use **Galexie** to export Stellar ledger metadata to cloud storage.
 
----
+Common modes:
 
-## Tools
-
-Use **Galexie** (a CDP command line program) to export network metadata to datastores.
-
-For historical bounded range of ledgers:
 ```bash
 --start <from_ledger> --end <to_ledger>
-```
-
-For continuous export of prior and all new ledgers:
-```bash
 --start <from_ledger>
 ```
 
----
+Galexie is the first step in Stellar's Composable Data Platform for building historical data lakes.
+
+## Source of truth
+
+- [Build Custom Network Ingestion Pipeline](https://developers.stellar.org/docs/build/apps/ingest-sdk)
+- [Ingest SDK](https://developers.stellar.org/docs/data/indexers/build-your-own/ingest-sdk)
+- [Galexie](https://developers.stellar.org/docs/data/indexers/build-your-own/galexie)
+- [BufferedStorageBackend](https://developers.stellar.org/docs/data/indexers/build-your-own/ingest-sdk/developer_guide/ledgerbackends/bufferedstoragebackend)
 
 ## See also
-
-- `/data-indexers/SKILL.md` — Querying historical data (Hubble, SubQuery)
-- `/rpc/SKILL.md` — Stellar RPC for events and live state
+- `/data-indexers/SKILL.md` — query historical data and indexers
+- `/rpc/SKILL.md` — Stellar RPC for real-time state
 
 ---
 
