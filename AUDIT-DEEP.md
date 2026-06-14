@@ -24,7 +24,7 @@
 - ✅ Horizon docs nunca usam "deprecated" — [docs](https://developers.stellar.org/docs/data/apis/horizon)
 - ✅ steexp.com está morto (só "Loading...") — [site](https://steexp.com)
 - ✅ Go SDK mudou para `github.com/stellar/go-stellar-sdk` — [repo](https://github.com/stellar/go-stellar-sdk)
-- ✅ soroban-sdk latest stable = 25.3.1 — [crates.io](https://crates.io/crates/soroban-sdk)
+- ✅ soroban-sdk latest stable = 25.3.1 — [crates.io](https://docs.rs/soroban-sdk)
 
 ---
 
@@ -132,7 +132,7 @@
 - **Skills:** soroban
 - **O que diz:** `soroban-sdk = { version = "25.3.0" }`
 - **Realidade:** Latest stable é 25.3.1 (26.0.0-rc.1 disponível)
-- **Fonte:** [crates.io](https://crates.io/crates/soroban-sdk) — confirmado
+- **Fonte:** [crates.io](https://docs.rs/soroban-sdk) — confirmado
 - **Fix:** `"25.3.1"` ou `"25"`.
 
 ### M8. OpenZeppelin: 4 módulos faltando

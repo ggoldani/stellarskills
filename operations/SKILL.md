@@ -315,7 +315,7 @@ const op = contract.call("my_fn", nativeToScVal(arg, { type: "..." }));
 // simulate on Stellar RPC before submit
 ```
 
-Low-level `Operation.invokeHostFunction({ func, auth })` requires hand-built XDR — use only when `Contract.call` doesn't fit. SDK reference: https://stellar.github.io/js-stellar-sdk/Operation.html
+Low-level `Operation.invokeHostFunction({ func, auth })` requires hand-built XDR — use only when `Contract.call` doesn't fit. SDK reference: https://stellar.github.io/js-stellar-sdk/reference/core-transactions/
 
 ### Extend Footprint TTL
 

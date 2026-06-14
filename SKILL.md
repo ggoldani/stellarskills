@@ -176,6 +176,7 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 | Smart Accounts — passkeys, policies, gasless | `raw.githubusercontent.com/ggoldani/stellarskills/main/smart-accounts/SKILL.md` |
 | Passkeys — WebAuthn, secp256r1, smart wallets | `raw.githubusercontent.com/ggoldani/stellarskills/main/passkeys/SKILL.md` |
 | State Archival — TTL, restoration, storage lifecycle | `raw.githubusercontent.com/ggoldani/stellarskills/main/state-archival/SKILL.md` |
+| Privacy — Privacy Pools, Confidential Tokens, ZK verifiers | `raw.githubusercontent.com/ggoldani/stellarskills/main/privacy/SKILL.md` |
 | ZK Proofs — BN254, Poseidon, Privacy Pools | `raw.githubusercontent.com/ggoldani/stellarskills/main/zk-proofs/SKILL.md` |
 
 ### Payments & Anchors
