@@ -195,6 +195,7 @@ Fetch the skill that matches your task. Each URL returns clean Markdown.
 | x402 micropayments | `raw.githubusercontent.com/ggoldani/stellarskills/main/x402/SKILL.md` |
 | MPP — charge/session intents | `raw.githubusercontent.com/ggoldani/stellarskills/main/mpp/SKILL.md` |
 | OpenZeppelin — audited presets, Wizard | `raw.githubusercontent.com/ggoldani/stellarskills/main/openzeppelin/SKILL.md` |
+| Cross-Chain — CCTP, Axelar GMP/ITS | `raw.githubusercontent.com/ggoldani/stellarskills/main/cross-chain/SKILL.md` |
 
 ### Context
 | Task | Fetch |
