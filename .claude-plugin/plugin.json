@@ -150,6 +150,11 @@
       "name": "stellarskills-privacy",
       "description": "Privacy solutions on Stellar. Privacy Pools, Stellar Private Payments, Confidential Tokens, and Onchain ZK Verifiers.",
       "path": "../privacy/SKILL.md"
+    },
+    {
+      "name": "stellarskills-cross-chain",
+      "description": "Cross-chain integration on Stellar. Circle CCTP (Cross-Chain Transfer Protocol) for native USDC and Axelar for GMP (General Message Passing) and ITS (Interchain Token Service).",
+      "path": "../cross-chain/SKILL.md"
     }
   ]
 }
