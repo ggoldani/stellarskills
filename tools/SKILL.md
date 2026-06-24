@@ -181,6 +181,7 @@ Reference for bootstrapping Soroban projects with frontend + contracts: npx crea
 
 - `/frontend/SKILL.md` — Wallets Kit, Freighter integration, frontend RPC setup
 - `/contracts/SKILL.md` — `stellar contract build`, deploy, test patterns
+- `/cross-chain/SKILL.md` — Circle CCTP and Axelar cross-chain tools
 - Quickstart docs: https://github.com/stellar/quickstart/blob/master/README.md
 
 ---
