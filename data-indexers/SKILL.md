@@ -172,6 +172,14 @@ Query via GraphQL:
 
 ---
 
+
+## Galexie & Custom Indexers
+If none of the indexing providers meet your needs, you can build your own using the Composable Data Pipeline (CDP) tools.
+- **Galexie:** A tool for acquiring Stellar ledger metadata from the network and exporting it to external storage or a data lake. It is the foundation of the Composable Data Pipeline (CDP).
+- **Ingest SDK:** A set of Go packages used as a programmatic domain model to interact with the Stellar network. It provides compile-time, type-safe access to ledger metadata and history archives.
+- **Processors:** Go packages that help parse Stellar blockchain data.
+
+---
 ## Choosing an indexer
 
 | Need | Use |

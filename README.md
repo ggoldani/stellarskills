@@ -102,6 +102,7 @@ clawhub install stellarskills
 
 | Skill Domain | URL | Description |
 |--------------|-----|-------------|
+| **Cross-Chain** | [`/cross-chain/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/cross-chain/SKILL.md) | Cross-chain tools on Stellar including Circle CCTP and Axelar (GMP and ITS). |
 | **Root Index** | [`/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/SKILL.md) | The missing knowledge between AI agents and production Stellar Network applications. |
 | **Ingest SDK** | [`/ingest-sdk/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/ingest-sdk/SKILL.md) | Building network data ingestion pipelines on Stellar using go-stellar-sdk. |
 | **ZK Proofs** | [`/zk-proofs/SKILL.md`](https://raw.githubusercontent.com/ggoldani/stellarskills/main/zk-proofs/SKILL.md) | Zero-Knowledge proofs on Stellar, including BN254 host functions, Poseidon hashing, and Privacy Pools. |
