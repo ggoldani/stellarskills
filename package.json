@@ -37,7 +37,8 @@
     "state-archival/SKILL.md",
     "oracles/SKILL.md",
     "stellar-disbursement-platform/SKILL.md",
-    "privacy/SKILL.md"
+    "privacy/SKILL.md",
+    "openzeppelin-relayer/SKILL.md"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
