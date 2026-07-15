@@ -1,6 +1,6 @@
 ---
 name: stellarskills-data-indexers
-description: Querying historical and real-time Stellar data — Mercury, Hubble BigQuery, SubQuery, and RPC limitations.
+description: Querying historical and real-time Stellar data — Mercury, Hubble BigQuery, SubQuery, Allium, Goldsky, The Graph, and RPC limitations.
 ---
 
 # STELLARSKILLS — Data Indexers
@@ -15,6 +15,7 @@ description: Querying historical and real-time Stellar data — Mercury, Hubble 
 - Building analytics dashboards or reporting pipelines
 - Aggregating contract events across thousands of ledgers
 - Streaming real-time ledger updates to a custom backend
+- Pre-computing and exporting ledger metadata to a data lake
 
 ---
 
@@ -22,9 +23,15 @@ description: Querying historical and real-time Stellar data — Mercury, Hubble 
 
 | Tool | Type | Best for | Access |
 |------|------|----------|--------|
-| **Mercury** | WASM script | Custom event processing, filtering | Stellar RPC endpoint |
+| **Mercury** | WASM (Retroshades) / GraphQL | Soroban event indexing via WASM, contract/tx data via GraphQL | Hosted or Self-hosted |
 | **Hubble** | BigQuery SQL | Historical analytics, bulk aggregation | Google Cloud (free tier) |
-| **SubQuery** | GraphQL | Complex queries, dashboard backends | SubQuery hosted or self-hosted |
+| **SubQuery** | GraphQL / Decentralized | Complex queries, dashboard backends | SubQuery hosted or self-hosted |
+| **Allium** | Portfolio / ETL | Off-the-shelf APIs, Custom ETL | Hosted API |
+| **Goldsky Mirror**| ETL Pipeline | Streaming data to custom db | Hosted Pipeline |
+| **The Graph** | Substreams | Streaming & transforming data | Hosted |
+| **Space and Time** | Proof of SQL | Tamper-proof, Zero-Knowledge compute | Hosted / Enterprise |
+| **OBSRVR** | API / ETL | Portfolio APIs, Flow ETL without pipelines | Hosted |
+| **OnFinality** | Infra Hosting | Hosting SubQuery logic | Hosted Infrastructure |
 | **Horizon** | REST API | Classic protocol history (1 year) | SDF-hosted or self-hosted |
 | **Stellar RPC** | JSON-RPC | Live state, recent events (7 days) | Various providers |
 
@@ -176,11 +183,24 @@ Query via GraphQL:
 
 | Need | Use |
 |------|-----|
+| Off-the-shelf standard app data (Portfolio APIs) | Allium, Alchemy (upcoming), OBSRVR Gateway, Horizon |
+| Stream / ETL to custom app database | The Graph (Substreams), Goldsky Mirror, SubQuery, OBSRVR Flow, Mercury Retroshades |
+| Verifiable Zero-Knowledge analytics | Space and Time (Proof of Indexing / Proof of SQL) |
+| Persistent GraphQL API for app backend | SubQuery |
 | Filter events at source, custom logic | Mercury WASM script |
 | Ad-hoc SQL analytics, historical reporting | Hubble BigQuery |
-| Persistent GraphQL API for app backend | SubQuery |
 | Quick one-off historical lookup | Horizon `operations` endpoint |
 | Live state and recent events | Stellar RPC (`getEvents`) |
+
+---
+
+## Build Your Own (Data Ingestion)
+
+If managed providers do not fit your needs, you can build custom ingestion pipelines:
+
+- **Galexie**: Tool for acquiring Stellar ledger metadata from the network and exporting it to external storage (a data lake). It serves as the foundation for a Composable Data Pipeline (CDP).
+- **Ingest SDK**: Go packages used for programmatic domain models to interact with the Stellar network. It parses ledger metadata and entries, including History Archives.
+- **Processors**: Go packages that help parse and transform raw Stellar blockchain data from ledgers into structured formats for downstream consumption.
 
 ---
 
