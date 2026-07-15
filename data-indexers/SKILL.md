@@ -23,7 +23,7 @@ description: Querying historical and real-time Stellar data — Mercury, Hubble 
 
 | Tool | Type | Best for | Access |
 |------|------|----------|--------|
-| **Mercury** | WASM / Portfolio | Soroban event filtering, Portfolio APIs | Hosted or Self-hosted |
+| **Mercury** | WASM (Retroshades) / GraphQL | Soroban event indexing via WASM, contract/tx data via GraphQL | Hosted or Self-hosted |
 | **Hubble** | BigQuery SQL | Historical analytics, bulk aggregation | Google Cloud (free tier) |
 | **SubQuery** | GraphQL / Decentralized | Complex queries, dashboard backends | SubQuery hosted or self-hosted |
 | **Allium** | Portfolio / ETL | Off-the-shelf APIs, Custom ETL | Hosted API |
@@ -186,6 +186,7 @@ Query via GraphQL:
 | Off-the-shelf standard app data (Portfolio APIs) | Allium, Alchemy (upcoming), OBSRVR Gateway, Horizon |
 | Stream / ETL to custom app database | The Graph (Substreams), Goldsky Mirror, SubQuery, OBSRVR Flow, Mercury Retroshades |
 | Verifiable Zero-Knowledge analytics | Space and Time (Proof of Indexing / Proof of SQL) |
+| Persistent GraphQL API for app backend | SubQuery |
 | Filter events at source, custom logic | Mercury WASM script |
 | Ad-hoc SQL analytics, historical reporting | Hubble BigQuery |
 | Quick one-off historical lookup | Horizon `operations` endpoint |
@@ -197,8 +198,9 @@ Query via GraphQL:
 
 If managed providers do not fit your needs, you can build custom ingestion pipelines:
 
-- **Galexie**: Tool for acquiring Stellar ledger metadata from the network and exporting to external storage (a data lake). It serves as the foundation for a Composable Data Pipeline (CDP).
+- **Galexie**: Tool for acquiring Stellar ledger metadata from the network and exporting it to external storage (a data lake). It serves as the foundation for a Composable Data Pipeline (CDP).
 - **Ingest SDK**: Go packages used for programmatic domain models to interact with the Stellar network. It parses ledger metadata and entries, including History Archives.
+- **Processors**: Go packages that help parse and transform raw Stellar blockchain data from ledgers into structured formats for downstream consumption.
 
 ---
 
